@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+</head>
+<style>
+	#logContainer {
+		position: absolute;
+		right: 0;
+		top: 0;
+		width: 30%;
+		height: 100%;
+		overflow-y: auto;
+		border-left: 1px solid #ccc;
+		padding: 10px;
+		box-sizing: border-box;
+		background-color: #f9f9f9;
+	}
+	#logContainer ul {
+		list-style-type: none;
+		padding: 0;
+	}
+	#logContainer li {
+		margin-bottom: 10px;
+		border-bottom: 1px solid #ddd;
+		padding-bottom: 5px;
+	}
+</style>
+<body>
+	<p>WebSocketサンプル</p>
+	<div>
+        <input type="text" id="urlInput" placeholder="Enter WebSocket URL" style="width: 70%;">
+        <button onclick="connectWebSocket()">Connect</button>
+        <button onclick="disconnectWebSocket()">Disconnect</button>
+    </div>
+	<input id="eventType">
+	<input id="dispMsg">
+	<h1>WebSocket Message Sender</h1>
+    <input type="text" id="messageInput" placeholder="Enter your message">
+    <button onclick="sendMessage()">Send</button>
+	<h1>WebSocket Byte Array Sender</h1>
+    <input type="text" id="messageInput2" placeholder="Enter your message">
+    <button onclick="sendByteArray()">Send Byte Array</button>
+	<h1>WebSocket Byte Array Sender</h1>
+    <div id="byteInputsContainer">
+        <input type="number" min="0" max="255" class="byte-input" placeholder="0-255">
+    </div>
+    <button onclick="addByteInput()">Add Byte</button>
+    <button onclick="sendByteArray()">Send Byte Array</button>
+</body>
+
+</html>
+
+<script type="text/javascript">
+
+	//WebSocket接続
+	var connection = new WebSocket("ws://10.2.0.15:3000/ws/");
+
+	//接続通知
+	connection.onopen = function (event) {
+		document.getElementById("eventType").value = "通信接続イベント受信";
+		document.getElementById("dispMsg").value = event.data;
+	};
+
+	//エラー発生
+	connection.onerror = function (error) {
+		document.getElementById("eventType").value = "エラー発生イベント受信";
+		document.getElementById("dispMsg").value = error.data;
+	};
+
+	//メッセージ受信
+	connection.onmessage = function (event) {
+		document.getElementById("eventType").value = "メッセージ受信";
+		document.getElementById("dispMsg").value = event.data;
+		logMessage(event.data);
+	};
+
+	//切断
+	connection.onclose = function () {
+		document.getElementById("eventType").value = "通信切断イベント受信";
+		document.getElementById("dispMsg").value = "";
+	};
+
+
+	function logMessage(message) {
+            const logContainer = document.getElementById("logContainer");
+            const logList = logContainer.querySelector("ul");
+
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement("li");
+            logEntry.textContent = `[${timestamp}] ${message}`;
+
+            logList.prepend(logEntry); // Add new entries at the top
+        }
+
+	function sendMessage() {
+            const message = document.getElementById("messageInput").value;
+            if (connection && connection.readyState === WebSocket.OPEN) {
+                connection.send(message);
+                console.log("Sent: ", message);
+            } else {
+                alert("WebSocket is not connected. Please refresh the page to reconnect.");
+            }
+        }
+		function sendByteArray() {
+            const byteInputs = document.querySelectorAll(".byte-input");
+            const byteArray = [];
+
+            byteInputs.forEach(input => {
+                const value = parseInt(input.value, 10);
+                if (!isNaN(value) && value >= 0 && value <= 255) {
+                    byteArray.push(value);
+                } else {
+                    alert("Invalid input: Please enter a number between 0 and 255.");
+                    return;
+                }
+            });
+
+            if (connection && connection.readyState === WebSocket.OPEN) {
+                connection.send(new Uint8Array(byteArray));
+                console.log("Sent (byte array):", byteArray);
+            } else {
+                alert("WebSocket is not connected. Please refresh the page to reconnect.");
+            }
+        }
+		function addByteInput() {
+            const container = document.getElementById("byteInputsContainer");
+            const input = document.createElement("input");
+            input.type = "number";
+            input.min = 0;
+            input.max = 255;
+            input.className = "byte-input";
+            input.placeholder = "0-255";
+            container.appendChild(input);
+        }
+		window.onload = () => {
+            document.body.insertAdjacentHTML('beforeend', '<div id="logContainer"><ul></ul></div>');
+        };
+</script>
