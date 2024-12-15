@@ -22,11 +22,9 @@ wss.on('connection', function(ws) {
     if (typeof(data) === "string") {
       // client sent a string
       console.log("string received from client -> '" + data + "'");
-      ws.send("[Server]string received from client -> '" + data + "'");
 
     } else {
       console.log("binary received from client -> " + Array.from(data).join(", ") + "");
-      ws.send("[Server]binary received from client -> " + Array.from(data).join(", ") + "");
     }
   });
 
