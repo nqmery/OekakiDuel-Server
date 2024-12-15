@@ -29,20 +29,16 @@
 </style>
 <body>
 	<p>WebSocketサンプル</p>
-	<div>
-        <input type="text" id="urlInput" placeholder="Enter WebSocket URL" style="width: 70%;">
-        <button onclick="connectWebSocket()">Connect</button>
-        <button onclick="disconnectWebSocket()">Disconnect</button>
-    </div>
+	<input type="text" id="urlInput" placeholder="Enter WebSocket URL">
+	<button onclick="connectWebSocket()">Connect</button>
+	<button onclick="disconnectWebSocket()">Disconnect</button>
+	<p>↓now</p>
 	<input id="eventType">
 	<input id="dispMsg">
-	<h1>WebSocket Message Sender</h1>
+	<h1>テキスト</h1>
     <input type="text" id="messageInput" placeholder="Enter your message">
     <button onclick="sendMessage()">Send</button>
-	<h1>WebSocket Byte Array Sender</h1>
-    <input type="text" id="messageInput2" placeholder="Enter your message">
-    <button onclick="sendByteArray()">Send Byte Array</button>
-	<h1>WebSocket Byte Array Sender</h1>
+	<h1>バイナリ</h1>
     <div id="byteInputsContainer">
         <input type="number" min="0" max="255" class="byte-input" placeholder="0-255">
     </div>
@@ -54,9 +50,20 @@
 
 <script type="text/javascript">
 
-	//WebSocket接続
-	var connection = new WebSocket("ws://10.2.0.15:3000/ws/");
+	
+	function connectWebSocket() {
+            const urlInput = document.getElementById("urlInput").value;
+            connection = new WebSocket(urlInput);
+		}
 
+	function disconnectWebSocket() {
+            if (connection) {
+                connection.close();
+                console.log("WebSocket connection closed by user.");
+            } else {
+                alert("WebSocket is not connected.");
+            }
+        }
 	//接続通知
 	connection.onopen = function (event) {
 		document.getElementById("eventType").value = "通信接続イベント受信";
