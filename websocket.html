@@ -1,96 +1,88 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-	<meta charset="utf-8">
-</head>
-<style>
-	#logContainer {
-		position: absolute;
-		right: 0;
-		top: 0;
-		width: 30%;
-		height: 100%;
-		overflow-y: auto;
-		border-left: 1px solid #ccc;
-		padding: 10px;
-		box-sizing: border-box;
-		background-color: #f9f9f9;
-	}
-	#logContainer ul {
-		list-style-type: none;
-		padding: 0;
-	}
-	#logContainer li {
-		margin-bottom: 10px;
-		border-bottom: 1px solid #ddd;
-		padding-bottom: 5px;
-	}
-</style>
-<body>
-	<p>WebSocketサンプル</p>
-	<input type="text" id="urlInput" placeholder="Enter WebSocket URL">
-	<button onclick="connectWebSocket()">Connect</button>
-	<button onclick="disconnectWebSocket()">Disconnect</button>
-	<p>↓now</p>
-	<input id="eventType">
-	<input id="dispMsg">
-	<h1>テキスト</h1>
-    <input type="text" id="messageInput" placeholder="Enter your message">
-    <button onclick="sendMessage()">Send</button>
-	<h1>バイナリ</h1>
-    <div id="byteInputsContainer">
-        <input type="number" min="0" max="255" class="byte-input" placeholder="0-255">
-    </div>
-    <button onclick="addByteInput()">Add Byte</button>
-    <button onclick="sendByteArray()">Send Byte Array</button>
-</body>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+            font-family: Arial, sans-serif;
+        }
+        #mainContainer {
+            flex: 1;
+            padding: 20px;
+        }
+        #logContainer {
+            width: 30%;
+            height: 100vh;
+            overflow-y: auto;
+            border-left: 1px solid #ccc;
+            padding: 10px;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
+        }
+        #logContainer ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #logContainer li {
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+    </style>
+    <script>
+        let socket;
 
-</html>
-
-<script type="text/javascript">
-
-	
-	function connectWebSocket() {
+        function connectWebSocket() {
             const urlInput = document.getElementById("urlInput").value;
-            connection = new WebSocket(urlInput);
-		}
 
-	function disconnectWebSocket() {
-            if (connection) {
-                connection.close();
+            if (!urlInput) {
+                alert("Please enter a WebSocket URL.");
+                return;
+            }
+
+            if (socket) {
+                socket.close();
+                console.log("Previous WebSocket connection closed.");
+            }
+
+            socket = new WebSocket(urlInput);
+
+            socket.onopen = () => {
+                console.log("Connected to WebSocket at " + urlInput);
+                logMessage(`Connected to ${urlInput}`);
+            };
+
+            socket.onmessage = (event) => {
+                console.log("Message from server: ", event.data);
+                logMessage(event.data);
+            };
+
+            socket.onerror = (error) => {
+                console.error("WebSocket error: ", error);
+                logMessage(`Error: ${error.message}`);
+            };
+
+            socket.onclose = () => {
+                console.log("WebSocket connection closed.");
+                logMessage("Connection closed.");
+            };
+        }
+
+        function disconnectWebSocket() {
+            if (socket) {
+                socket.close();
                 console.log("WebSocket connection closed by user.");
+                logMessage("Connection closed by user.");
             } else {
-                alert("WebSocket is not connected.");
+                alert("No WebSocket connection to close.");
             }
         }
-	//接続通知
-	connection.onopen = function (event) {
-		document.getElementById("eventType").value = "通信接続イベント受信";
-		document.getElementById("dispMsg").value = event.data;
-	};
 
-	//エラー発生
-	connection.onerror = function (error) {
-		document.getElementById("eventType").value = "エラー発生イベント受信";
-		document.getElementById("dispMsg").value = error.data;
-	};
-
-	//メッセージ受信
-	connection.onmessage = function (event) {
-		document.getElementById("eventType").value = "メッセージ受信";
-		document.getElementById("dispMsg").value = event.data;
-		logMessage(event.data);
-	};
-
-	//切断
-	connection.onclose = function () {
-		document.getElementById("eventType").value = "通信切断イベント受信";
-		document.getElementById("dispMsg").value = "";
-	};
-
-
-	function logMessage(message) {
+        function logMessage(message) {
             const logContainer = document.getElementById("logContainer");
             const logList = logContainer.querySelector("ul");
 
@@ -101,16 +93,24 @@
             logList.prepend(logEntry); // Add new entries at the top
         }
 
-	function sendMessage() {
-            const message = document.getElementById("messageInput").value;
-            if (connection && connection.readyState === WebSocket.OPEN) {
-                connection.send(message);
-                console.log("Sent: ", message);
+        function sendTextMessage() {
+            const textInput = document.getElementById("textMessageInput").value;
+
+            if (!textInput) {
+                alert("Please enter a message to send.");
+                return;
+            }
+
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(textInput);
+                console.log("Sent: ", textInput);
+                logMessage(`Sent: ${textInput}`);
             } else {
-                alert("WebSocket is not connected. Please refresh the page to reconnect.");
+                alert("WebSocket is not connected.");
             }
         }
-		function sendByteArray() {
+
+        function sendByteArray() {
             const byteInputs = document.querySelectorAll(".byte-input");
             const byteArray = [];
 
@@ -124,14 +124,16 @@
                 }
             });
 
-            if (connection && connection.readyState === WebSocket.OPEN) {
-                connection.send(new Uint8Array(byteArray));
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(new Uint8Array(byteArray));
                 console.log("Sent (byte array):", byteArray);
+                logMessage(`Sent byte array: [${byteArray.join(", ")}]`);
             } else {
-                alert("WebSocket is not connected. Please refresh the page to reconnect.");
+                alert("WebSocket is not connected.");
             }
         }
-		function addByteInput() {
+
+        function addByteInput() {
             const container = document.getElementById("byteInputsContainer");
             const input = document.createElement("input");
             input.type = "number";
@@ -141,7 +143,34 @@
             input.placeholder = "0-255";
             container.appendChild(input);
         }
-		window.onload = () => {
-            document.body.insertAdjacentHTML('beforeend', '<div id="logContainer"><ul></ul></div>');
-        };
-</script>
+    </script>
+</head>
+<body>
+    <div id="mainContainer">
+        <h1>WebSocket Client</h1>
+
+        <div>
+            <input type="text" id="urlInput" placeholder="Enter WebSocket URL" style="width: 60%;">
+            <button onclick="connectWebSocket()">Connect</button>
+            <button onclick="disconnectWebSocket()">Disconnect</button>
+        </div>
+
+        <h2>Send Text Message</h2>
+        <div>
+            <input type="text" id="textMessageInput" placeholder="Enter message" style="width: 70%;">
+            <button onclick="sendTextMessage()">Send Text</button>
+        </div>
+
+        <h2>Send Byte Array</h2>
+        <div id="byteInputsContainer">
+            <input type="number" min="0" max="255" class="byte-input" placeholder="0-255">
+        </div>
+        <button onclick="addByteInput()">Add Byte</button>
+        <button onclick="sendByteArray()">Send Byte Array</button>
+    </div>
+
+    <div id="logContainer">
+        <ul></ul>
+    </div>
+</body>
+</html>
