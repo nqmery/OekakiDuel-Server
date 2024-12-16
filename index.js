@@ -9,12 +9,10 @@ const port = 3000;
 const server = createServer(app);
 const wss = new WebSocket.Server({ server });
 
-wss.on('connection', function(ws) {
+wss.on('connection', function(ws, req) {
   console.log("client joined.");
-
   // send "hello world" interval
   //const textInterval = setInterval(() => ws.send("hello world!"), 100);
-
   // send random bytes interval
   //const binaryInterval = setInterval(() => ws.send(crypto.randomBytes(8).buffer), 110);
 
