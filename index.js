@@ -8,6 +8,26 @@ const port = 3000;
 
 const server = createServer(app);
 const wss = new WebSocket.Server({ server });
+class Player {
+  constructor(id,ip) {
+    this.ip = ip;
+    this.id = id;
+    this.cards = Card[5];
+    hp = 200;//とりあえず50
+  }
+}
+class Card{
+  constructor(id,player,def,atk,spd,eff){
+    this.player = player;//どっちのプレイヤーのカードか
+    this.id = id;//カード番号
+    this.def = def;//防御力
+    this.atk = atk;//攻撃力
+    this.spd = spd;//速さ
+    this.eff = eff;//効果
+  }
+}
+
+
 
 wss.on('connection', function(ws, req) {
   console.log("client joined.");
