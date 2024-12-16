@@ -12,7 +12,6 @@ class Player {
   constructor(id,ip) {
     this.ip = ip;
     this.id = id;
-    this.cards = Card[5];
     hp = 200;//とりあえず50
   }
 }
@@ -35,7 +34,6 @@ wss.on('connection', function(ws, req) {
   //const textInterval = setInterval(() => ws.send("hello world!"), 100);
   // send random bytes interval
   //const binaryInterval = setInterval(() => ws.send(crypto.randomBytes(8).buffer), 110);
-
   ws.on('message', function(data) {
     if (typeof(data) === "string") {
       // client sent a string
