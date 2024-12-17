@@ -7,9 +7,9 @@ const app = express();
 const port = 3000;
 let serialNumber = 0;//通し番号
 const server = createServer(app);
-const wss = new WebSocket.Server({ server });//
-flag = 0;//0:画像未送信、1:画像送信済み
-
+const wss = new WebSocket.Server({ server });
+const cards = Array(10); 
+let flag = 0; //0:画像未送信、1:画像送信済み
 roundnum = 0;      // 現在ラウンド数
 //あとでインスタンス化
 class Player {
@@ -115,9 +115,10 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
       console.log("string received from client -> '" + data + "'");
       ws.send("[Server]string received from client -> '" + data + "'");
 
-      SelectCard1 = new Card(1,1,50,50,50,50); //クライアント１が選択したカード
-      SelectCard2 = new Card(1,2,23,23,23,23); //クライアント２が選択したカード、どうやってクライアントを区別するんだっけ
+      cards[0] = new Card(1,1,50,50,50,50); //例クライアント１が選択したカード
+      cards[1] = new Card(1,2,23,23,23,23); //例クライアント２が選択したカード、どうやってクライアントを区別するんだっけ
       }
+
     } else {
       console.log("binary received from client -> " + Array.from(data).join(", ") + "");
       ws.send("[Server]binary received from client -> " + Array.from(data).join(", ") + "");
@@ -130,31 +131,61 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
     
     //選んだカードの開示
     if(byte[0] === 31 && roundnum <= 5){
-      for(i = 0; i < cards.length; i++){
+      for(let i = 0; i < cards.length; i++){
         //プレイヤー１が選択したカード
-        if(byte[3] === Card[i].player === 0 && byte[4] === Card[i].id){
-          SelectCard1 = Card[i];
+        if(byte[3] === cards[i].player && cards[i].player === 0 && byte[4] === cards[i].id){
+           SelectCard1 = cards[i];
         }
         //プレイヤー２が選択したカード
-        if(byte[3] === Card[i].player === 1 && byte[4] === Card[i].id){
-          SelectCard2 = Card[i];
+        if(byte[3] === cards[i].player && cards[i].player === 1 && byte[4] === cards[i].id){
+           SelectCard2 = cards[i];
         }
       }
     }
     
-    function  BattleFlow(){
+    if(byte[0] === 32 && roundnum <= 5){
+    //特殊効果発動順序
+    if(SelectCard1.spd > SelectCard2.spd){
+      if(byte[5] === 0){
+        BattleFlow();
+      }
+      //確実に先制攻撃
+      if(byte[5] === 1){
+        if(SelectCard1.player === byte[3]){
+          SelectCard2.spd = 0;
+        }else{
+          SelectCard1.spd = 0;
+        }
+      }
+      //相手の攻撃無効化
+      if(byte[5] === 2){
+        if(SelectCard1.player === byte[3]){
+          SelectCard2.atk = 0;
+        }else{
+          SelectCard1.atk = 0;
+        }
+      }
+    }
+    
+      function  BattleFlow(){
       //カードの速さを比較
       if(SelectCard1.spd > SelectCard2.spd){
         //先にプレイヤー１が攻撃
         BattleCalc(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp); 
+        BattleCalc(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp); 
         //後からプレイヤー２が攻撃
+        BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
         BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
       } else {
         //先にプレイヤー２が攻撃
         BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
+        BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
         //後からプレイヤー１が攻撃
         BattleCalc(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp);
       }
+    }
+    }
+
       // バトル中のダメージ計算
       function BattleCalc(playernum, atknum, defnum, hpnum){
         
@@ -163,10 +194,13 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         //HPの更新
         hpnum = Math.max(hpnum - Damagevalue, 0);
         //クラスインスタンスHPの変更
+        //クラスインスタンスHPの変更
         if(playernum === 0){
+          Player1.hp = hpnum;
           Player1.hp = hpnum;
         }
         else if (playernum === 1){
+          Player2.hp = hpnum;
           Player2.hp = hpnum;
         }
         //更新したHPをJOSN形式で送る
