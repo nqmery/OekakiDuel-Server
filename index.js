@@ -5,14 +5,12 @@ const { send } = require('process');
 const WebSocket = require('ws');
 const app = express();
 const port = 3000;
-serialNumber = 0;//通し番号
+let serialNumber = 0;//通し番号
 const server = createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ server });//
 flag = 0;//0:画像未送信、1:画像送信済み
-cards1 = Card[5];  //プレイヤー１のカード合計枚数
-cards2 = Card[5];  //プレイヤー２のカード合計枚数
-roundnum = 0;      // 現在ラウンド数
 
+roundnum = 0;      // 現在ラウンド数
 //あとでインスタンス化
 class Player {
   constructor(id,ip,hp) {
@@ -36,21 +34,58 @@ class Card{
     this.eff = new Effect(effID);//効果
   }
 }
-
+cards1 = Card[5];  //プレイヤー１のカード合計枚数
+cards2 = Card[5];  //プレイヤー２のカード合計枚数
 class Effect{
   constructor(effID){
-    this.effID = effID;//効果の発動タイミング
-    
-  }
+    this.effID = effID;//効果のID
 
+  }
+  effectActive(){
+    //効果の発動
+    switch(this.effID){
+      case 1:
+        //効果１
+        break;
+      case 2:
+        //効果２
+        break;
+      case 3:
+        //効果３
+        break;
+      case 4:
+        //効果４
+        break;
+      case 5:
+        //効果５
+        break;
+      case 6:
+        //効果６
+        break;
+      case 7:
+        //効果７
+        break;
+      case 8:
+        //効果８
+        break;
+      case 9:
+        //効果９
+        break;
+      case 10:
+        //効果１０
+        break;
+      default:
+        //効果なし
+        break;
+    }
+  }
 }
 
 
 
 
-wss.on('connection', function(ws) {
+wss.on('connection', function(ws) {//クライアントが接続してきたときの処理
   console.log("client joined.");
-
   // send "hello world" interval
   //const textInterval = setInterval(() => ws.send("hello world!"), 100);
   /*
@@ -62,23 +97,32 @@ wss.on('connection', function(ws) {
 
   // send random bytes interval
   //const binaryInterval = setInterval(() => ws.send(crypto.randomBytes(8).buffer), 110);
-  ws.on('message', function(data) {
 
+
+  send_data =[3];//ターン数の送信
+  send_data[0] = 30;
+  send_data[1] = serialNumber;
+  send_data[2] = roundnum;
+  sendBinaryData(ws,send_data);
+  
+  ws.on('message', function(data) {//クライアントからメッセージを受信したときの処理
+    concole.log("現在のターン数",roundnum);
     //カード情報の保存
-    if (typeof(data) === "初期設定") {
-      if(data)
+    if (typeof(data) === binaryType) {
+      if(data){
       // client sent a string
+      const byte = new Uint8Array(data);
       console.log("string received from client -> '" + data + "'");
       ws.send("[Server]string received from client -> '" + data + "'");
 
       SelectCard1 = new Card(1,1,50,50,50,50); //クライアント１が選択したカード
       SelectCard2 = new Card(1,2,23,23,23,23); //クライアント２が選択したカード、どうやってクライアントを区別するんだっけ
-
+      }
     } else {
       console.log("binary received from client -> " + Array.from(data).join(", ") + "");
       ws.send("[Server]binary received from client -> " + Array.from(data).join(", ") + "");
     }
-
+    
     //現在ターン数の確認してターン開始
     if(byte[0]===30 && roundnum <= 5) {
       roundnum = byte[2];
@@ -88,54 +132,57 @@ wss.on('connection', function(ws) {
     if(byte[0] === 31 && roundnum <= 5){
       for(i = 0; i < cards.length; i++){
         //プレイヤー１が選択したカード
-        if(byte[3] === Card[i+1].player === 0 && byte[4] === Card[i+1].id){
-           SelectCard1 = Card[i+1];
+        if(byte[3] === Card[i].player === 0 && byte[4] === Card[i].id){
+          SelectCard1 = Card[i];
         }
         //プレイヤー２が選択したカード
-        if(byte[3] === Card[i+1].player === 1 && byte[4] === Card[i+1].id){
-           SelectCard2 = Card[i+1];
+        if(byte[3] === Card[i].player === 1 && byte[4] === Card[i].id){
+          SelectCard2 = Card[i];
         }
       }
     }
-
+    
+    function  BattleFlow(){
       //カードの速さを比較
       if(SelectCard1.spd > SelectCard2.spd){
         //先にプレイヤー１が攻撃
-        BattleFlow(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp); 
+        BattleCalc(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp); 
         //後からプレイヤー２が攻撃
-        BattleFlow(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
+        BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
       } else {
         //先にプレイヤー２が攻撃
-        BattleFlow(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
+        BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
         //後からプレイヤー１が攻撃
-        BattleFlow(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp);
+        BattleCalc(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp);
       }
-
-      // バトル中の処理
-      function BattleFlow(playernum, atknum, defnum, hpnum){
+      // バトル中のダメージ計算
+      function BattleCalc(playernum, atknum, defnum, hpnum){
         
         //負の値にならないようにして計算結果を定義
         Damagevalue = Math.max(defnum - atknum, 0); 
         //HPの更新
         hpnum = Math.max(hpnum - Damagevalue, 0);
-        //クラスインスタンスの変更
+        //クラスインスタンスHPの変更
         if(playernum === 0){
-          Player1 = new Player(0, 1, hpnum);
+          Player1.hp = hpnum;
         }
         else if (playernum === 1){
-          Player2 = new Player(1, 1, hpnum);
+          Player2.hp = hpnum;
         }
-        //更新したHPを送る
+        //更新したHPをJOSN形式で送る
          response = {
           type: 'damage_result', //タイプを追加するかは相談
           player: playernum,
           hp: hpnum
         }
-        ws.send(response); //オブジェクト遅れないからバイナリにしないといけないかも
+        response[0] = 32;
+        response[1] = serialNumber;
+        response[2] = playernum;//プレイヤーのID
+        response[3] = playernum;//HP
+        ws.send(JSON.stringify(response)); //オブジェクト遅れないからバイナリにしないといけないかも
       }
+      
   });
-
-
   ws.on('close', function() {
     console.log("client left.");
   });
@@ -145,7 +192,7 @@ server.listen(port, function() {
   console.log('Listening on http://localhost:${port}');
 });
 
-function BinaryTranslation(Array){//信号を元に戻す
+function BinaryTranslation(Array){//信号を元に戻す これいらないかも
   len = Array.length;
   if(len == 9 && Array[0] >= 30){//戦闘中の信号
     result = [9];//
@@ -156,8 +203,23 @@ function BinaryTranslation(Array){//信号を元に戻す
   }
 }
 
-function ToranslationToBinary(send_data){//信号をバイナリに変換
-  send_data_binary = [];
-  send_data_binary[0] = 0;//通信種別 
-  return send_data_binary;
+function sendBinaryData(ws,send_data){//信号をバイナリに変換して送信
+  const buffer = new ArrayBuffer(9);
+  const view = new DataView(buffer);
+  if (send_data[0] == 30) { // ターン数の送信
+    view.setUint8(0, send_data[0]); // 信号の種類
+    view.setUint8(1, serialNumber++); // 命令の通し番号
+    view.setUint8(2, send_data[2]); // ターン数
+  } else if (send_data[0] == 31) { // カードの開示
+    view.setUint8(0, send_data[0]); // 信号の種類
+    view.setUint8(1, serialNumber++); // 命令の通し番号
+    view.setUint8(2, send_data[2]); // プレイヤーID
+    view.setUint8(3, send_data[3]); // カード番号
+  } else if (send_data[0] == 32) { // ダメージの送信
+    view.setUint8(0, send_data[0]); // 信号の種類
+    view.setUint8(1, serialNumber++); // 命令の通し番号
+    view.setUint8(2, send_data[2]); // ダメージ量
+  }
+  serialNumber++;
+  ws.send(buffer);
 }
