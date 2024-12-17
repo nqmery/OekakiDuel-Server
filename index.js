@@ -98,8 +98,8 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
       //画像の受信
       //画像の受信が完了したらflag = 1にする
     }else{//以下に
-      const data = BinaryTranslation(data);
-      switch(data[0]){//種別に応じて関数を呼び出す
+      const useData = BinaryTranslation(data);
+      switch(useData[0]){//種別に応じて関数を呼び出す
         case 1:
           break;
       }
