@@ -8,7 +8,7 @@ const port = 3000;
 
 const server = createServer(app);
 const wss = new WebSocket.Server({ server });
-cards = Card[10];  //プレイヤー１のカード合計枚数
+const cards = Card[10];  //プレイヤー１のカード合計枚数
 roundnum = 0;      // 現在ラウンド数
 
 //あとでインスタンス化
@@ -45,14 +45,14 @@ wss.on('connection', function(ws, req) {
   ws.on('message', function(data) {
 
     //カード情報の保存
-    if (typeof(data) === "初期設定") {
+    if (typeof(data) === "string") {
       if(data)
       // client sent a string
       console.log("string received from client -> '" + data + "'");
       ws.send("[Server]string received from client -> '" + data + "'");
 
-      cards[0] = new Card(1,1,50,50,50,50); //クライアント１が選択したカード
-      cards[1] = new Card(1,2,23,23,23,23); //クライアント２が選択したカード、どうやってクライアントを区別するんだっけ
+      cards[0] = new Card(1,1,50,50,50,50); //例クライアント１が選択したカード
+      cards[1] = new Card(1,2,23,23,23,23); //例クライアント２が選択したカード、どうやってクライアントを区別するんだっけ
 
     } else {
       console.log("binary received from client -> " + Array.from(data).join(", ") + "");
@@ -66,14 +66,14 @@ wss.on('connection', function(ws, req) {
     
     //選んだカードの開示
     if(byte[0] === 31 && roundnum <= 5){
-      for(i = 0; i < cards.length; i++){
+      for(let i = 0; i < cards.length; i++){
         //プレイヤー１が選択したカード
-        if(byte[3] === Card[i+1].player === 0 && byte[4] === Card[i+1].id){
-           SelectCard1 = Card[i+1];
+        if(byte[3] === cards[i+1].player === 0 && byte[4] === cards[i+1].id){
+           SelectCard1 = cards[i+1];
         }
         //プレイヤー２が選択したカード
-        if(byte[3] === Card[i+1].player === 1 && byte[4] === Card[i+1].id){
-           SelectCard2 = Card[i+1];
+        if(byte[3] === cards[i+1].player === 1 && byte[4] === cards[i+1].id){
+           SelectCard2 = cards[i+1];
         }
       }
     }
@@ -100,6 +100,7 @@ wss.on('connection', function(ws, req) {
           SelectCard1.atk = 0;
         }
       }
+
       
     }
     
@@ -126,12 +127,12 @@ wss.on('connection', function(ws, req) {
         Damagevalue = Math.max(defnum - atknum, 0); 
         //HPの更新
         hpnum = Math.max(hpnum - Damagevalue, 0);
-        //クラスインスタンスの変更
+        //クラスインスタンスHPの変更
         if(playernum === 0){
-          Player1 = new Player(0, 1, hpnum);
+          Player1.hp = hpnum;
         }
         else if (playernum === 1){
-          Player2 = new Player(1, 1, hpnum);
+          Player2.hp = hpnum;
         }
         //更新したHPを送る
          response = {
