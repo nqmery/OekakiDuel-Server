@@ -18,7 +18,7 @@ class Player {
     this.ip = ip;
     this.id = id;
    //持たなくていいかも this.cards = Card[5];
-    hp = 200;//とりあえず50
+    this.hp = hp;//とりあえず50
   }
 }
 
@@ -34,28 +34,6 @@ class Card{
     this.spd = spd;//速さ
     this.eff = eff;//効果
   }
-  //オブジェクト変数にする？そしたら変数に代入せずに計算できるかも
-  //攻撃変数を呼び出し
-  get atkValue() {
-    return this.atk;
-  }
-  //防御変数を呼び出し
-  get defValue() {
-    return this.def;
-  }
-  //機動力変数を呼び出し
-  get spdValue() {
-    return this.spd;
-  } 
-  //プレイヤー番号の呼び出し
-  get playerValue(){
-    return this.player;
-  }
-  //カード番号の呼び出し
-  get cardIDValue(){
-    return this.id;
-  }
-
 }
 
 
@@ -75,8 +53,8 @@ wss.on('connection', function(ws, req) {
       console.log("string received from client -> '" + data + "'");
       ws.send("[Server]string received from client -> '" + data + "'");
 
-      Card[0] = new Card(1,1,50,50,50,50); //クライアント１が選択したカード
-      Card[1] = new Card(1,2,23,23,23,23); //クライアント２が選択したカード、どうやってクライアントを区別するんだっけ
+      SelectCard1 = new Card(1,1,50,50,50,50); //クライアント１が選択したカード
+      SelectCard2 = new Card(1,2,23,23,23,23); //クライアント２が選択したカード、どうやってクライアントを区別するんだっけ
 
     } else {
       console.log("binary received from client -> " + Array.from(data).join(", ") + "");
@@ -92,44 +70,36 @@ wss.on('connection', function(ws, req) {
     if(byte[0] === 31 && roundnum <= 5){
       for(i = 0; i < cards.length; i++){
         //プレイヤー１が選択したカード
-        if(byte[3] === Card[i+1].playerValue === 0 && byte[4] === Card[i+1].cardIDValue){
-           SelectCardByPlayer1 = Card[i+1];
+        if(byte[3] === Card[i+1].player === 0 && byte[4] === Card[i+1].id){
+           SelectCard1 = Card[i+1];
         }
         //プレイヤー２が選択したカード
-        if(byte[3] === Card[i+1].playerValue === 1 && byte[4] === Card[i+1].cardIDValue){
-           SelectCardByPlayer2 = Card[i+1];
+        if(byte[3] === Card[i+1].player === 1 && byte[4] === Card[i+1].id){
+           SelectCard2 = Card[i+1];
         }
       }
     }
 
-
-      //カードの素早さを定義
-      //例として配列の番号をハードコートしているがクライアントから受け取った変数を使うと思う
-      //定義せずに直接card[0].~を使うほうがいいかもしれないがいまはクライアントの見分けをするために定義する
-      spd1 = Card[0].spdValue
-      spd2 = Card[1].spdValue
-
       //カードの速さを比較
-      if(spd1 > spd2){
-
-        BattleFlow(Card[1].playerValue, Card[0].atkValue, Card[1].defValue);
-
-        BattleFlow(Card[0].playerValue, Card[1].atkValue, Card[0].defValue);
+      if(SelectCard1.spd > SelectCard2.spd){
+        //先にプレイヤー１が攻撃
+        BattleFlow(SelectCard2.player, SelectCard1.atk, SelectCard2.def); 
+        //後からプレイヤー２が攻撃
+        BattleFlow(SelectCard1.player, SelectCard2.atk, SelectCard1.def);
       } else {
-
-        BattleFlow(Card[0].playerValue, Card[1].atkValue, Card[0].defValue);
-
-        BattleFlow(Card[1].playerValue, Card[0].atkValue, Card[1].defValue);
-       
+        //先にプレイヤー２が攻撃
+        BattleFlow(SelectCard1.player, SelectCard2.atk, SelectCard1.def);
+        //後からプレイヤー１が攻撃
+        BattleFlow(SelectCard2.player, SelectCard1.atk, SelectCard2.def);
       }
 
       // バトル中の処理
-      function BattleFlow(playernum, atknum, defnum){
+      function BattleFlow(playernum, atknum, defnum, hpnum){
         
         //負の値にならないようにして計算結果を定義
         Damagevalue = Math.max(defnum - atknum, 0); 
         //HPの更新
-        HP = Math.max(HP - Damagevalue, 0);
+        hpnum = Math.max(hpnum - Damagevalue, 0);
         //更新したHPを送る
          response = {
           type: 'damage_result', //タイプを追加するかは相談
