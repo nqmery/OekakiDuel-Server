@@ -10,7 +10,7 @@ const server = createServer(app);
 const wss = new WebSocket.Server({ server });
 const cards = Array(10); 
 let flag = 0; //0:画像未送信、1:画像送信済み
-roundnum = 0;      // 現在ラウンド数
+roundnum = 20;      // 現在ラウンド数
 //あとでインスタンス化
 class Player {
   constructor(id,ip,hp) {
@@ -88,40 +88,29 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
   console.log("client joined.");
   // send "hello world" interval
   //const textInterval = setInterval(() => ws.send("hello world!"), 100);
-  /*
-  ここに画像の送信処理を書く
-  if(flag == 0){
-  }
-
-  */
 
   // send random bytes interval
   //const binaryInterval = setInterval(() => ws.send(crypto.randomBytes(8).buffer), 110);
 
 
-  send_data =[3];//ターン数の送信
-  send_data[0] = 30;
-  send_data[1] = serialNumber;
-  send_data[2] = roundnum;
-  sendBinaryData(ws,send_data);
-  
   ws.on('message', function(data) {//クライアントからメッセージを受信したときの処理
-    concole.log("現在のターン数",roundnum);
-    //カード情報の保存
-    if (typeof(data) === binaryType) {
-      if(data){
-      // client sent a string
-      const byte = new Uint8Array(data);
-      console.log("string received from client -> '" + data + "'");
-      ws.send("[Server]string received from client -> '" + data + "'");
-
-      cards[0] = new Card(1,1,50,50,50,50); //例クライアント１が選択したカード
-      cards[1] = new Card(1,2,23,23,23,23); //例クライアント２が選択したカード、どうやってクライアントを区別するんだっけ
+    if(flag == 0){//画像の送受信用
+      //画像の受信
+      //画像の受信が完了したらflag = 1にする
+    }else{//以下に
+      const data = BinaryTranslation(data);
+      switch(data[0]){//種別に応じて関数を呼び出す
+        case 1:
+          break;
       }
 
+    }
+    console.log("現在のターン数",roundnum);
+    //カード情報の保存
+    if (typeof(data) === "string") {
+      console.log("Error: バイナリーではないデータが送信されました");
     } else {
-      console.log("binary received from client -> " + Array.from(data).join(", ") + "");
-      ws.send("[Server]binary received from client -> " + Array.from(data).join(", ") + "");
+      BinaryTranslation(data);
     }
     
     //現在ターン数の確認してターン開始
@@ -192,7 +181,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         //負の値にならないようにして計算結果を定義
         Damagevalue = Math.max(defnum - atknum, 0); 
         //HPの更新
-        hpnum = Math.max(hpnum - Damagevalue, 0);
+        hpnum = Math.max(hpnum - Damagevalue, 0);//
         //クラスインスタンスHPの変更
         //クラスインスタンスHPの変更
         if(playernum === 0){
@@ -203,17 +192,15 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
           Player2.hp = hpnum;
           Player2.hp = hpnum;
         }
-        //更新したHPをJOSN形式で送る
-         response = {
-          type: 'damage_result', //タイプを追加するかは相談
-          player: playernum,
-          hp: hpnum
-        }
+        //ダメージの送信
         response[0] = 32;
         response[1] = serialNumber;
-        response[2] = playernum;//プレイヤーのID
-        response[3] = playernum;//HP
-        ws.send(JSON.stringify(response)); //オブジェクト遅れないからバイナリにしないといけないかも
+        response[2] = playernum;//攻撃プレイヤーのID
+        response[3] = playernum+1 % 2;//被攻撃プレイヤーのID
+        response[4] = Damagevalue;//特殊効果番号
+        resopnse[5] = hpnum;//効果の引数1
+        resopnse[6] = hpnum;//被攻撃プレイヤーのhp
+        sendBinaryData(ws,response);
       }
       
   });
@@ -226,15 +213,16 @@ server.listen(port, function() {
   console.log('Listening on http://localhost:${port}');
 });
 
-function BinaryTranslation(Array){//信号を元に戻す これいらないかも
-  len = Array.length;
-  if(len == 9 && Array[0] >= 30){//戦闘中の信号
-    result = [9];//
-    
-    return result;
-  }else{//
+function BinaryTranslation(recv_data){//信号を元に戻す どう考えてもいるわこれ
+  const dataset = new Uint8Array(recv_data);
+  //console.log("binary received from client -> " + Array.from(recv_data).join(", ") + "");
+  //ws.send("[Server]binary received from client -> " + Array.from(recv_data).join(", ") + "");//確認用
+  // cards[0] = new Card(1,1,50,50,50,50); //例クライアント１が選択したカード
+  // cards[1] = new Card(1,2,23,23,23,23); //例クライアント２が選択したカード、どうやってクライアントを区別するんだっけ
+  console.log("binary received from client -> " + Array.from(recv_data).join(", ") + "");
+  console.log("バイナリデータ",dataset);
+  return dataset;
 
-  }
 }
 
 function sendBinaryData(ws,send_data){//信号をバイナリに変換して送信
@@ -253,7 +241,21 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
     view.setUint8(0, send_data[0]); // 信号の種類
     view.setUint8(1, serialNumber++); // 命令の通し番号
     view.setUint8(2, send_data[2]); // ダメージ量
+    view.setUint8(3, send_data[3]); // 攻撃プレイヤーID
+    view.setUint8(4, send_data[4]); // 被攻撃プレイヤーID
+    const specialEffect = send_data[5]; // 16ビットの特殊効果番号
+    // 上位バイトと下位バイトを抽出
+    const highByteEff = (specialEffect >> 8) & 0xFF; // 上位バイト
+    const lowByteEff = specialEffect & 0xFF; // 下位バイト
+    view.setUint8(5, highByteEff); // 特殊効果番号の上位バイトを格納
+    view.setUint8(6, lowByteEff); // 特殊効果番号の下位バイトを格納
+    const recentHP = send_data[6]; // hpの関係量
+    const highByteHP = (recentHP >> 8) & 0xFF; // 上位バイト
+    const lowByteHP = recentHP & 0xFF; // 下位バイト
+    view.setUint8(6, highByteHP); // 特殊効果番号の上位バイトを格納
+    view.setUint8(7, lowByteHP); // 特殊効果番号の下位バイトを格納
   }
+  console.log("send_data",buffer); 
   serialNumber++;
   ws.send(buffer);
 }
