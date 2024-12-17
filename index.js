@@ -36,12 +36,16 @@ class Card{
   }
   //防御変数を呼び出し
   get defValue() {
-    return this.atk;
+    return this.def;
   }
   //機動力変数を呼び出し
   get spdValue() {
-    return this.atk;
+    return this.spd;
   } 
+  //カード番号の呼び出し
+  get playerValue(){
+    return this.player;
+  }
 
 }
 
@@ -74,48 +78,43 @@ wss.on('connection', function(ws, req) {
 
       //カードの素早さを定義
       //例として配列の番号をハードコートしているがクライアントから受け取った変数を使うと思う
+      //定義せずに直接card[0].~を使うほうがいいかもしれないがいまはクライアントの見分けをするために定義する
       spd1 = Card[0].spdValue
       spd2 = Card[1].spdValue
 
       //カードの速さを比較
       if(spd1 > spd2){
 
+        BattleFlow(Card[1].playerValue, Card[0].atkValue, Card[1].defValue);
+
+        BattleFlow(Card[0].playerValue, Card[1].atkValue, Card[0].defValue);
+
+      }
+
+      }else{
+
+        BattleFlow(Card[0].playerValue, Card[1].atkValue, Card[0].defValue);
+
+        BattleFlow(Card[1].playerValue, Card[0].atkValue, Card[1].defValue);
+       
+      }
+
+      // バトル中の処理
+      function BattleFlow(playernum, atknum, defnum){
+        
         //負の値にならないようにして計算結果を定義
-        Damagevalue = Math.max(Card[1].atkValue - Card[0].defValue, 0); 
+        Damagevalue = Math.max(defnum - atknum, 0); 
         //HPの更新
         HP = Math.max(HP - Damagevalue, 0);
         //更新したHPを送る
-        const response = {
+         response = {
           type: 'damage_result', //タイプを追加するかは相談
-          id: 2,
-          hp: Damagevalue,
+          player: playernum,
+          hp: HP,
         }
         ws.send(response); //オブジェクト遅れないからバイナリにしないといけないかも
-      
-      }else{
-        //負の値にならないようにして計算結果を定義
-        Damagevalue = Math.max(Card[0].atkValue - Card[1].defValue, 0); 
-        const response = {
-          type: 'damage_result', 
-          damage: Damagevalue,
-        }
-        ws.send(response); 
       }
-
-      
-      // バトル中の処理
-      const { attackerAtk, defenderDef } = message;
-      if (typeof attackerAtk === 'number' && typeof defenderDef === 'number') {
-        const damage = Math.max(attackerAtk - defenderDef, 0); // Prevent negative damage
-        const response = {
-          type: 'damage_result',
-          damage: damage,
-        };
-        
-      } else {
-        
-      }
-  }});
+  });
 
 
   ws.on('close', function() {
