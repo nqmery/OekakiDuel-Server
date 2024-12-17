@@ -8,7 +8,9 @@ const port = 3000;
 
 const server = createServer(app);
 const wss = new WebSocket.Server({ server });
-cards = Card[5];  //カードの合計枚数
+cards1 = Card[5];  //プレイヤー１のカード合計枚数
+cards2 = Card[5];  //プレイヤー２のカード合計枚数
+roundnum = 0;      // 現在ラウンド数
 
 //あとでインスタンス化
 class Player {
@@ -19,6 +21,9 @@ class Player {
     hp = 200;//とりあえず50
   }
 }
+
+Player1 = new Player(0, 1, 200); //プレイヤー１のインスタンス
+Player2 = new Player(1, 1, 200); //プレイヤー２のインスタンス
 
 class Card{
   constructor(id,player,def,atk,spd,eff){
@@ -42,9 +47,13 @@ class Card{
   get spdValue() {
     return this.spd;
   } 
-  //カード番号の呼び出し
+  //プレイヤー番号の呼び出し
   get playerValue(){
     return this.player;
+  }
+  //カード番号の呼び出し
+  get cardIDValue(){
+    return this.id;
   }
 
 }
@@ -61,6 +70,7 @@ wss.on('connection', function(ws, req) {
 
     //カード情報の保存
     if (typeof(data) === "初期設定") {
+      if(data)
       // client sent a string
       console.log("string received from client -> '" + data + "'");
       ws.send("[Server]string received from client -> '" + data + "'");
@@ -73,8 +83,25 @@ wss.on('connection', function(ws, req) {
       ws.send("[Server]binary received from client -> " + Array.from(data).join(", ") + "");
     }
 
-    //毎ターン行う通信
-    if (message.type === '毎ターンごとに通信する') {
+    //現在ターン数の確認してターン開始
+    if(byte[0]===30 && roundnum <= 5) {
+      roundnum = byte[2];
+    }
+    
+    //選んだカードの開示
+    if(byte[0] === 31 && roundnum <= 5){
+      for(i = 0; i < cards.length; i++){
+        //プレイヤー１が選択したカード
+        if(byte[3] === Card[i+1].playerValue === 0 && byte[4] === Card[i+1].cardIDValue){
+           SelectCardByPlayer1 = Card[i+1];
+        }
+        //プレイヤー２が選択したカード
+        if(byte[3] === Card[i+1].playerValue === 1 && byte[4] === Card[i+1].cardIDValue){
+           SelectCardByPlayer2 = Card[i+1];
+        }
+      }
+    }
+
 
       //カードの素早さを定義
       //例として配列の番号をハードコートしているがクライアントから受け取った変数を使うと思う
@@ -88,10 +115,7 @@ wss.on('connection', function(ws, req) {
         BattleFlow(Card[1].playerValue, Card[0].atkValue, Card[1].defValue);
 
         BattleFlow(Card[0].playerValue, Card[1].atkValue, Card[0].defValue);
-
-      }
-
-      }else{
+      } else {
 
         BattleFlow(Card[0].playerValue, Card[1].atkValue, Card[0].defValue);
 
@@ -110,7 +134,7 @@ wss.on('connection', function(ws, req) {
          response = {
           type: 'damage_result', //タイプを追加するかは相談
           player: playernum,
-          hp: HP,
+          hp: HP
         }
         ws.send(response); //オブジェクト遅れないからバイナリにしないといけないかも
       }
