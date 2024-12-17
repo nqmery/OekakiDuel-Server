@@ -22,8 +22,8 @@ class Player {
   }
 }
 
-Player1 = new Player(0, 1, 200); //プレイヤー１のインスタンス
-Player2 = new Player(1, 1, 200); //プレイヤー２のインスタンス
+Player1 = new Player(0, 1, 200); //プレイヤー１のインスタンス初期値
+Player2 = new Player(1, 1, 200); //プレイヤー２のインスタンス初期値
 
 class Card{
   constructor(id,player,def,atk,spd,eff){
@@ -35,7 +35,6 @@ class Card{
     this.eff = eff;//効果
   }
 }
-
 
 wss.on('connection', function(ws, req) {
   console.log("client joined.");
@@ -83,14 +82,14 @@ wss.on('connection', function(ws, req) {
       //カードの速さを比較
       if(SelectCard1.spd > SelectCard2.spd){
         //先にプレイヤー１が攻撃
-        BattleFlow(SelectCard2.player, SelectCard1.atk, SelectCard2.def); 
+        BattleFlow(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp); 
         //後からプレイヤー２が攻撃
-        BattleFlow(SelectCard1.player, SelectCard2.atk, SelectCard1.def);
+        BattleFlow(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
       } else {
         //先にプレイヤー２が攻撃
-        BattleFlow(SelectCard1.player, SelectCard2.atk, SelectCard1.def);
+        BattleFlow(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
         //後からプレイヤー１が攻撃
-        BattleFlow(SelectCard2.player, SelectCard1.atk, SelectCard2.def);
+        BattleFlow(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp);
       }
 
       // バトル中の処理
@@ -100,11 +99,18 @@ wss.on('connection', function(ws, req) {
         Damagevalue = Math.max(defnum - atknum, 0); 
         //HPの更新
         hpnum = Math.max(hpnum - Damagevalue, 0);
+        //クラスインスタンスの変更
+        if(playernum === 0){
+          Player1 = new Player(0, 1, hpnum);
+        }
+        else if (playernum === 1){
+          Player2 = new Player(1, 1, hpnum);
+        }
         //更新したHPを送る
          response = {
           type: 'damage_result', //タイプを追加するかは相談
           player: playernum,
-          hp: HP
+          hp: hpnum
         }
         ws.send(response); //オブジェクト遅れないからバイナリにしないといけないかも
       }
