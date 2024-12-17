@@ -8,7 +8,7 @@ const port = 3000;
 
 const server = createServer(app);
 const wss = new WebSocket.Server({ server });
-const cards = Card[10];  //プレイヤー１のカード合計枚数
+const cards = Array(10);  //プレイヤー１のカード合計枚数
 roundnum = 0;      // 現在ラウンド数
 
 //あとでインスタンス化
@@ -46,13 +46,16 @@ wss.on('connection', function(ws, req) {
 
     //カード情報の保存
     if (typeof(data) === "string") {
-      if(data)
+      if(data){
+      //バイナリ（二進数のデータ）をサイズ８のバイト配列に変換
+      const byte = new Uint8Array(data);
       // client sent a string
       console.log("string received from client -> '" + data + "'");
       ws.send("[Server]string received from client -> '" + data + "'");
 
       cards[0] = new Card(1,1,50,50,50,50); //例クライアント１が選択したカード
       cards[1] = new Card(1,2,23,23,23,23); //例クライアント２が選択したカード、どうやってクライアントを区別するんだっけ
+      }
 
     } else {
       console.log("binary received from client -> " + Array.from(data).join(", ") + "");
@@ -68,12 +71,12 @@ wss.on('connection', function(ws, req) {
     if(byte[0] === 31 && roundnum <= 5){
       for(let i = 0; i < cards.length; i++){
         //プレイヤー１が選択したカード
-        if(byte[3] === cards[i+1].player === 0 && byte[4] === cards[i+1].id){
-           SelectCard1 = cards[i+1];
+        if(byte[3] === cards[i].player && cards[i].player === 0 && byte[4] === cards[i].id){
+           SelectCard1 = cards[i];
         }
         //プレイヤー２が選択したカード
-        if(byte[3] === cards[i+1].player === 1 && byte[4] === cards[i+1].id){
-           SelectCard2 = cards[i+1];
+        if(byte[3] === cards[i].player && cards[i].player === 1 && byte[4] === cards[i].id){
+           SelectCard2 = cards[i];
         }
       }
     }
@@ -100,8 +103,6 @@ wss.on('connection', function(ws, req) {
           SelectCard1.atk = 0;
         }
       }
-
-      
     }
     
       function  BattleFlow(){
@@ -134,13 +135,13 @@ wss.on('connection', function(ws, req) {
         else if (playernum === 1){
           Player2.hp = hpnum;
         }
-        //更新したHPを送る
+        //更新したHPをJOSN形式で送る
          response = {
           type: 'damage_result', //タイプを追加するかは相談
           player: playernum,
           hp: hpnum
         }
-        ws.send(response); //オブジェクト遅れないからバイナリにしないといけないかも
+        ws.send(JSON.stringify(response)); //オブジェクト遅れないからバイナリにしないといけないかも
       }
   });
 
