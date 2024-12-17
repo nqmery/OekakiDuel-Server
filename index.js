@@ -86,15 +86,13 @@ class Effect{
 
 wss.on('connection', function(ws) {//クライアントが接続してきたときの処理
   console.log("client joined.");
-  // send "hello world" interval
-  //const textInterval = setInterval(() => ws.send("hello world!"), 100);
-
-  // send random bytes interval
-  //const binaryInterval = setInterval(() => ws.send(crypto.randomBytes(8).buffer), 110);
-
-
+  const responsetest = new Uint8Array(3);
+  responsetest[0] = 30;
+  responsetest[1] = 12;
+  responsetest[2] = 20;
+  ws.send(responsetest);
   ws.on('message', function(data) {//クライアントからメッセージを受信したときの処理
-    if(flag == 0){//画像の送受信用
+    if(flag == 0){//画像の送受信用 マッチング処理もあった...
       //画像の受信
       //画像の受信が完了したらflag = 1にする
     }else{//以下に
@@ -215,10 +213,6 @@ server.listen(port, function() {
 
 function BinaryTranslation(recv_data){//信号を元に戻す どう考えてもいるわこれ
   const dataset = new Uint8Array(recv_data);
-  //console.log("binary received from client -> " + Array.from(recv_data).join(", ") + "");
-  //ws.send("[Server]binary received from client -> " + Array.from(recv_data).join(", ") + "");//確認用
-  // cards[0] = new Card(1,1,50,50,50,50); //例クライアント１が選択したカード
-  // cards[1] = new Card(1,2,23,23,23,23); //例クライアント２が選択したカード、どうやってクライアントを区別するんだっけ
   console.log("binary received from client -> " + Array.from(recv_data).join(", ") + "");
   console.log("バイナリデータ",dataset);
   return dataset;
