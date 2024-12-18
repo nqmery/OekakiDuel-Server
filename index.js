@@ -8,12 +8,16 @@ const port = 3000;
 let serialNumber = 0;//通し番号
 const server = createServer(app);
 const wss = new WebSocket.Server({ server });
-let flag = 1; //0:画像未送信、1:画像送信済み
-roundnum = 20;      // 現在ラウンド数
-let turnManege = 0;   // 1ターンのどこに該当するかを保持する
+const flag = 1; //0:画像未送信、1:画像送信済み
+const roundnum = 20;      // 現在ラウンド数 わかりやすいように20になっていますが本当は0
+const turnManege = 0;   // 1ターンのどこに該当するかを保持する
 /*
 0:ターン開始処理
-1:カード選択処理
+
+↓プレイやーごとに行うので2回
+1:カード選択処理 
+2:カード選択処理　
+
 2:バトル前特殊効果
 3:バトル処理　早いほう
 4:バトル処理　遅いほう
@@ -41,12 +45,14 @@ class Card{
     this.spd = spd;//速さ
     this.eff = new Effect(effID);//効果
   }
+  effectActive(){
+    this.eff.effectActive();//特殊効果の使用時はこのメソッドを呼び出す
+  }
 }
 const cards  = Array.from({ length: 2 }, () => Array(5));//こっちの方がかんりしやすい
 class Effect{
   constructor(effID){
     this.effID = effID;//効果のID
-
   }
   effectActive(){
     //効果の発動
@@ -158,6 +164,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
       for(let i = 0; i < useData.length; i++){
         console.log("バイナリデータ",useData[i]);
       }
+      
       //通信種別による関数の呼び出し
       switch(useData[0]){//種別に応じて関数を呼び出す
         case 30://ラウンドが始まったことをクライアントに送信
@@ -188,11 +195,15 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
           serialNumber++;
           break;  
         case 36://選択カードの受信と選択カードの開示
-        let pid = useData[1];//プレイヤーID 0 or 1
-        if(flag == 2){
-          let selectedCard = CardSelect(useData); //選択したカード
-          send_data = [31, serialNumber, pid, selectedCard.id];
+          let selectedCard = CardSelect(useData);//選ばれたカードの取得
+          let pid = useData[2];//プレイヤーID 0 or 1
+          let send_data = [31, serialNumber, pid, selectedCard.id];//データの送信
+          turnManege++;//ターンのどこなのかを管理
+
           sendBinaryData(ws,send_data);
+          if(turnManege === 2){
+            EffBeforeBattle();
+          }
           break;
         }else{
           serialNumber++;
@@ -433,4 +444,9 @@ function CardSelect(data){
   let cid = data[3];//カードID
   let selectedCard = cards[pid][cid];
   return selectedCard;
+}
+
+function EffBeforeBattle(){
+  //バトル前の特殊効果
+
 }
