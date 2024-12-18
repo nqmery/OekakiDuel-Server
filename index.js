@@ -140,13 +140,14 @@ class Effect{
   }
 }
 
+let nextplayerID = 0;//最初にアクセスしたプレイヤーのID
 wss.on('connection', function(ws) {//クライアントが接続してきたときの処理
   console.log("client joined.");
-  const responsetest = new ArrayBuffer(3);
+  const PlayerID = nextplayerID
+  nextplayerID++;    //次にアクセスするプレイヤーのID
+  const responsetest = new ArrayBuffer(1);
   const view = new DataView(responsetest);
-  view.setUint8(0, 30);
-  view.setUint8(1, 12);
-  view.setUint8(2, 20);
+  view.setUint8(0, PlayerID);//クライアントにプレイヤーIDを送信
   ws.send(responsetest);
 
   ws.on('message', function(data) {//クライアントからメッセージを受信したときの処理
@@ -164,14 +165,17 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         case 1:
           break;
         case 30://ラウンドが始まったことをクライアントに送信
+          serialNumber++;
           turnManege = 1;
           roundnum++; //クライアントが２回アクセスするから要検証
-           send_data = [30, turnManege, roundnum];
+          send_data = [30, turnManege, roundnum];
           sendBinaryData(ws, send_data);
           break;
         case 31:
+          serialNumber++;
           break;  
         case 32:
+          serialNumber++;
            //ダメージの送信
            /*
            response[0] = 32;
@@ -183,11 +187,15 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
            resopnse[6] = hpnum;//被攻撃プレイヤーのhp
            sendBinaryData(ws,response);
            */
-            send_data = [32, 12, 12, 23];
-          //send_data = [32,serialNumber, SelectCard1.player, SelectCard2.player,SelectCard1.eff,hpnum]
+          //send_data = [32, 12, 12, 23];
+          send_data = [32,serialNumber, SelectCard1.player, SelectCard2.player,SelectCard1.eff,hpnum]
           
+          break;
+        case 33:
+          serialNumber++;
           break;  
         case 36://選択カードの受信と選択カードの開示
+          serialNumber++;
           let selectedCard = CardSelect(useData);
           let pid = useData[2];//プレイヤーID 0 or 1
               send_data = [31, serialNumber, pid, selectedCard.id];
