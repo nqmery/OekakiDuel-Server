@@ -200,6 +200,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
               cards[pid][cid] = new Card(cards[2],cards[3],cards[4],cards[5],cards[6],cards[7]); //ATK,DEF,SPD,EFF,カード番,プレイヤー番号
               cards.push(cards[pid][cid]);
           cid++;
+          console.log(cid);
         if(cid == 10){
           flag == 2;
           console.log("flagが2になったよ");
