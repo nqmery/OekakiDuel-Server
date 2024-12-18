@@ -34,8 +34,7 @@ class Card{
     this.eff = new Effect(effID);//効果
   }
 }
-cards1 = Card[5];  //プレイヤー１のカード合計枚数
-cards2 = Card[5];  //プレイヤー２のカード合計枚数
+
 class Effect{
   constructor(effID){
     this.effID = effID;//効果のID
@@ -44,28 +43,78 @@ class Effect{
   effectActive(){
     //効果の発動
     switch(this.effID){
-      case 1:
-        //効果１
+      case 10:
+        //効果10
+         //確実に先制攻撃
+        if(SelectCard1.player === byte[3]){
+          SelectCard2.spd = 0;
+        }
+        else if(SelectCard2.player === byte[3]){
+          SelectCard1.spd = 0;
+        }
         break;
-      case 2:
-        //効果２
+      case 11:
+        //効果11
+        //相手の攻撃無効化
+        if(SelectCard1.player === byte[3]){
+          SelectCard2.atk = 0;
+        }
+        else if(SelectCard2.player === byte[3]){
+          SelectCard1.atk = 0;
+        }
         break;
-      case 3:
-        //効果３
+      case 12:
+        //効果12
+        //ターン開始時に体力全回復
+        if(SelectCard1.player === byte[3]){
+          Player1.hp = 200;
+        }
+        else if(SelectCard2.player === byte[3]){
+          Player2.hp = 200;
+        }
         break;
-      case 4:
-        //効果４
+      case 13:
+        //効果13
+         //ターン終了時に両者体力全回復
+        Player1.hp = 200;
+        Player2.hp = 200;
+         //ダメージの送信
+         response[0] = 32;
+         response[1] = serialNumber;
+         response[2] = playernum;//攻撃プレイヤーのID
+         response[3] = playernum+1 % 2;//被攻撃プレイヤーのID
+         response[4] = Damagevalue;//特殊効果番号
+         resopnse[5] = hpnum;//効果の引数1
+         resopnse[6] = hpnum;//被攻撃プレイヤーのhp
+         sendBinaryData(ws,response);
         break;
-      case 5:
-        //効果５
+      case 14:
+        //効果14
+        //相手の防御力が自分の防御力の3倍以上とかのときに相手の体力を残り5くらいまで減らす
+        if((SelectCard1.player === byte[3]) && (SelectCard2.def >= 3*SelectCard1.def)){
+          Player2.hp = 5;
+        }
+        else if((SelectCard2.player === byte[3]) && (SelectCard1.def >= 3*SelectCard2.def)){
+          Player1.hp = 5;
+        }
         break;
-      case 6:
-        //効果６
+      case 15:
+        //効果15
+         //相手の素早さを下げる
+        if(SelectCard1.player === byte[3]){
+          SelectCard2 = SelectCard2 - 20;
+        }
+        else if(SelectCard2.player === byte[3]){
+          SelectCard1 = SelectCard1 - 20;
+        }
         break;
-      case 7:
-        //効果７
+      case 16:
+        //効果16
+        //両者の攻撃無効化
+        SelectCard2.atk = 0;
+        SelectCard1.atk = 0;
         break;
-      case 8:
+      case 18:
         //効果８
         break;
       case 9:
@@ -80,9 +129,6 @@ class Effect{
     }
   }
 }
-
-
-
 
 wss.on('connection', function(ws) {//クライアントが接続してきたときの処理
   console.log("client joined.");
@@ -131,91 +177,35 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         }
       }
     }
-    
-    if(byte[0] === 32 && roundnum <= 5){
+    //バトル前に発動する効果,bytenum
+    function UniqueEffectBefore(){
+     if(byte[0] === 32 && roundnum <= 5){
     //特殊効果発動順序
-    if(SelectCard1.spd > SelectCard2.spd){
-      if(byte[5] === 0){
-        BattleFlow();
-      }
-      //確実に先制攻撃
-      if(byte[5] === 10){
-        if(SelectCard1.player === byte[3]){
-          SelectCard2.spd = 0;
-        }else{
-          SelectCard1.spd = 0;
-        }
-      }
-      //相手の攻撃無効化
-      if(byte[5] === 11){
-        if(SelectCard1.player === byte[3]){
-          SelectCard2.atk = 0;
-        }else{
-          SelectCard1.atk = 0;
-        }
-      }
-      //両者の攻撃無効化
-      if(byte[5] === 16){
-        
-          SelectCard2.atk = 0;
-          SelectCard1.atk = 0;
-        
-      }
-       //ターン開始時に体力全回復
-       if(byte[5] === 12){
-        if(SelectCard1.player === byte[3]){
-          Player1.hp = 200;
-        }
-        else if(SelectCard2.player === byte[3]){
-          Player2.hp = 200;
-        }
-       }
-       //ターン終了時に両者体力全回復
-       if(byte[5] === 13){
-
-        Player1.hp = 200;
-        Player2.hp = 200;
-       }
-       //相手の防御力が自分の防御力の3倍以上とかのときに相手の体力を残り5くらいまで減らす
-       if(byte[5] === 14){
-        if((SelectCard1.player === byte[3]) && (SelectCard2.def >= 3*SelectCard1.def)){
-          Player2.hp = 5;
-        }
-        else if((SelectCard2.player === byte[3]) && (SelectCard1.def >= 3*SelectCard2.def)){
-          Player1.hp = 5;
-        }
-       }
-       //相手の素早さを下げる
-       if(byte[5] === 15){
-        if(SelectCard1.player === byte[3]){
-          SelectCard2 = SelectCard2 - 20;
-        }
-        else if(SelectCard2.player === byte[3]){
-          SelectCard1 = SelectCard1 - 20;
-        }
-       }
+     if(SelectCard1.spd > SelectCard2.spd){
+      SelectCard1.eff.effectActive();
+      SelectCard2.eff.effectActive();  
+     }
+     else{
+      SelectCard2.eff.effectActive();
+      SelectCard1.eff.effectActive();  
+     }
     }
-
-
-    
+    }
       function  BattleFlow(){
       //カードの速さを比較
       if(SelectCard1.spd > SelectCard2.spd){
         //先にプレイヤー１が攻撃
         BattleCalc(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp); 
-        BattleCalc(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp); 
         //後からプレイヤー２が攻撃
-        BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
         BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
       } else {
         //先にプレイヤー２が攻撃
         BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
-        BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
         //後からプレイヤー１が攻撃
         BattleCalc(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp);
-      }
+      } 
     }
-    }
+    
 
       // バトル中のダメージ計算
       function BattleCalc(playernum, atknum, defnum, hpnum){
@@ -223,17 +213,14 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         //負の値にならないようにして計算結果を定義
         Damagevalue = Math.max(defnum - atknum, 0); 
         //HPの更新
-        hpnum = Math.max(hpnum - Damagevalue, 0);//
-        //クラスインスタンスHPの変更
-        //クラスインスタンスHPの変更
+        hpnum = Math.max(hpnum - Damagevalue, 0);
         if(playernum === 0){
-          Player1.hp = hpnum;
-          Player1.hp = hpnum;
+          Player1.hp = hpnum; //クライアント１のHP更新
         }
         else if (playernum === 1){
-          Player2.hp = hpnum;
-          Player2.hp = hpnum;
+          Player2.hp = hpnum; //クライアント２のHP更新
         }
+
         //ダメージの送信
         response[0] = 32;
         response[1] = serialNumber;
