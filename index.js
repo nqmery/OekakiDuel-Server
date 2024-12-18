@@ -139,7 +139,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         BattleFlow();
       }
       //確実に先制攻撃
-      if(byte[5] === 1){
+      if(byte[5] === 10){
         if(SelectCard1.player === byte[3]){
           SelectCard2.spd = 0;
         }else{
@@ -147,14 +147,56 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         }
       }
       //相手の攻撃無効化
-      if(byte[5] === 2){
+      if(byte[5] === 11){
         if(SelectCard1.player === byte[3]){
           SelectCard2.atk = 0;
         }else{
           SelectCard1.atk = 0;
         }
       }
+      //両者の攻撃無効化
+      if(byte[5] === 16){
+        
+          SelectCard2.atk = 0;
+          SelectCard1.atk = 0;
+        
+      }
+       //ターン開始時に体力全回復
+       if(byte[5] === 12){
+        if(SelectCard1.player === byte[3]){
+          Player1.hp = 200;
+        }
+        else if(SelectCard2.player === byte[3]){
+          Player2.hp = 200;
+        }
+       }
+       //ターン終了時に両者体力全回復
+       if(byte[5] === 13){
+
+        Player1.hp = 200;
+        Player2.hp = 200;
+       }
+       //相手の防御力が自分の防御力の3倍以上とかのときに相手の体力を残り5くらいまで減らす
+       if(byte[5] === 14){
+        if((SelectCard1.player === byte[3]) && (SelectCard2.def >= 3*SelectCard1.def)){
+          Player2.hp = 5;
+        }
+        else if((SelectCard2.player === byte[3]) && (SelectCard1.def >= 3*SelectCard2.def)){
+          Player1.hp = 5;
+        }
+       }
+       //相手の素早さを下げる
+       if(byte[5] === 15){
+        if(SelectCard1.player === byte[3]){
+          SelectCard2 = SelectCard2 - 20;
+        }
+        else if(SelectCard2.player === byte[3]){
+          SelectCard1 = SelectCard1 - 20;
+        }
+       }
     }
+
+
     
       function  BattleFlow(){
       //カードの速さを比較
