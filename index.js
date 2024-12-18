@@ -18,11 +18,13 @@ const turnManege = 0;   // 1ターンのどこに該当するかを保持する
 1:カード選択処理 
 2:カード選択処理　
 
-2:バトル前特殊効果
-3:バトル処理　早いほう
-4:バトル処理　遅いほう
-5:バトル後特殊効果
-6:ターン終了処理 +特殊効果がある場合は清算
+3:バトル前特殊効果
+4:バトル前特殊効果
+5:バトル処理　早いほう
+6:バトル処理　遅いほう
+7:バトル後特殊効果1
+8:バトル後特殊効果2
+9:ターン終了処理 +特殊効果がある場合は清算
 
 */
 //あとでインスタンス化
@@ -34,10 +36,9 @@ class Player {
   }
 }
 
-
-Player1 = new Player(0, 1, 200); //プレイヤー１のインスタンス初期値
-Player2 = new Player(1, 1, 200); //プレイヤー２のインスタンス初期値
-
+Players = Array.from({ length: 2 }, () => Array(2));//プレイヤーのインスタンス初期値
+Players[0][0] = new Player(0, 1, 200); //プレイヤー１のインスタンス初期値
+Players[0][1] = new Player(1, 1, 200); //プレイヤー１のインスタンス初期値
 class Card{
   constructor(id,player,def,atk,spd,effID){
     this.player = player;//どっちのプレイヤーのカードか このパラメータ使わないかも　cards配列で管理するから
@@ -45,49 +46,30 @@ class Card{
     this.def = def;//防御力
     this.atk = atk;//攻撃力
     this.spd = spd;//速さ
-    this.eff = new Effect(effID);//効果
-  }
-  effectActive(){
-    this.eff.effectActive();//特殊効果の使用時はこのメソッドを呼び出す
-  }
-}
-const cards  = Array.from({ length: 2 }, () => Array(5));//こっちの方がかんりしやすい
-class Effect{
-  constructor(effID){
-    this.effID = effID;//効果のID
+    this.eff = effID;//効果
   }
   effectActive(){
     //効果の発動
     switch(this.effID){
-      case 1:
-        //効果１
-        break;
-      case 2:
-        //効果２
-        break;
-      case 3:
-        //効果３
-        break;
-      case 4:
-        //効果４
-        break;
-      case 5:
-        //効果５
-        break;
-      case 6:
-        //効果６
-        break;
-      case 7:
-        //効果７
-        break;
-      case 8:
-        //効果８
-        break;
-      case 9:
-        //効果９
-        break;
       case 10:
-        //効果１０
+        //効果１０必ず先制攻撃
+        if(turnManege === 3 || turnManege === 4){
+          spd = 999;
+        }
+        break;
+      case 11:
+        //効果１１攻撃無効か
+        if(turnManege === 3 || turnManege === 4){
+        }
+        break;
+      case 12:
+        //効果１２終了時に全回復
+        hp = 200;
+        break;
+      case 13:
+        //効果１３両社のHpを全回復
+        Player1.hp = 200;
+        Player2.hp = 200;
         break;
       default:
         //効果なし
@@ -95,6 +77,9 @@ class Effect{
     }
   }
 }
+const cards  = Array.from({ length: 2 }, () => Array(5));//こっちの方がかんりしやすい
+const selectedCard = Array.from({ length: 2 }, () => Array(1));
+
 
 
 
@@ -118,7 +103,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
       for(let i = 0; i < useData.length; i++){
         console.log("バイナリデータ",useData[i]);
       }
-      
+
       //通信種別による関数の呼び出し
       switch(useData[0]){//種別に応じて関数を呼び出す
         case 1:
@@ -133,7 +118,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
           turnManege++;//ターンのどこなのかを管理
           sendBinaryData(ws,send_data);
           if(turnManege === 2){
-            EffBeforeBattle();
+            EffBeforeBattle(pid);
           }
           break;
       }
@@ -194,34 +179,6 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
   ws.send(buffer);
 }
 
-// console.log("現在のターン数",roundnum);
-// //カード情報の保存
-// if (typeof(data) === "string") {
-//   console.log("Error: バイナリーではないデータが送信されました");
-// } else {
-//   BinaryTranslation(data);
-// }
-
-// //現在ターン数の確認してターン開始
-// if(byte[0]===30 && roundnum <= 5) {
-//   roundnum = byte[2];
-// }
-
-
-// if(byte[0] === 32 && roundnum <= 5){
-// //特殊効果発動順序
-// if(SelectCard1.spd > SelectCard2.spd){
-//   if(byte[5] === 0){
-//     BattleFlow();
-//   }
-//   //確実に先制攻撃
-//   if(byte[5] === 1){
-//     if(SelectCard1.player === byte[3]){
-//       SelectCard2.spd = 0;
-//     }else{
-//       SelectCard1.spd = 0;
-//     }
-//   }
 //   //相手の攻撃無効化
 //   if(byte[5] === 2){
 //     if(SelectCard1.player === byte[3]){
@@ -287,7 +244,22 @@ function CardSelect(data){
   return selectedCard;
 }
 
-function EffBeforeBattle(){
-  //バトル前の特殊効果
 
+function EffBeforeBattle(pid){
+  //バトル前の特殊効果
+  selectedCard[pid].effectActive();
+  turnManege ++;
+  if(turnManege === 4){
+    BattleFlow();
+  }
+}
+
+function EffAfterBattle(pid){
+  //バトル後の特殊効果
+  selectedCard[pid].effectActive();
+  turnManege ++;
+  if(turnManege === 6){
+    //ターン終了処理
+    //特殊効果がある場合はここで処理
+  }
 }
