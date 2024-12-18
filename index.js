@@ -166,15 +166,31 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         case 30://ラウンドが始まったことをクライアントに送信
           turnManege = 1;
           roundnum++; //クライアントが２回アクセスするから要検証
-          send_data = [30, turnManege, roundnum];
+           send_data = [30, turnManege, roundnum];
           sendBinaryData(ws, send_data);
           break;
-        case 31://
+        case 31:
+          break;  
+        case 32:
+           //ダメージの送信
+           /*
+           response[0] = 32;
+           response[1] = serialNumber;
+           response[2] = playernum;//攻撃プレイヤーのID
+           response[3] = playernum+1 % 2;//被攻撃プレイヤーのID
+           response[4] = Damagevalue;//特殊効果番号
+           resopnse[5] = hpnum;//効果の引数1-------渡す必要あるのかな
+           resopnse[6] = hpnum;//被攻撃プレイヤーのhp
+           sendBinaryData(ws,response);
+           */
+            send_data = [32, 12, 12, 23];
+          //send_data = [32,serialNumber, SelectCard1.player, SelectCard2.player,SelectCard1.eff,hpnum]
+          
           break;  
         case 36://選択カードの受信と選択カードの開示
           let selectedCard = CardSelect(useData);
           let pid = useData[2];//プレイヤーID 0 or 1
-          let send_data = [31, serialNumber, pid, selectedCard.id];
+              send_data = [31, serialNumber, pid, selectedCard.id];
           sendBinaryData(ws,send_data);
           break;
       }
@@ -189,7 +205,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
     
     
     //選んだカードの開示
-    if(byte[0] === 31 && roundnum <= 5){
+   function ShowSelectCard(){
       for(let i = 0; i < cards.length; i++){
         //プレイヤー１が選択したカード
         if(byte[3] === cards[i].player && cards[i].player === 0 && byte[4] === cards[i].id){
@@ -201,9 +217,9 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         }
       }
     }
-    //バトル前に発動する効果,bytenum
+    
+    //バトル前に発動する効果
     function UniqueEffectBefore(){
-     if(byte[0] === 32 && roundnum <= 5){
     //特殊効果発動順序
      if(SelectCard1.spd > SelectCard2.spd){
       SelectCard1.eff.effectActive();
@@ -214,7 +230,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
       SelectCard1.eff.effectActive();  
      }
     }
-    }
+    
       function  BattleFlow(){
       //カードの速さを比較
       if(SelectCard1.spd > SelectCard2.spd){
@@ -246,6 +262,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         }
 
         //ダメージの送信
+        /*
         response[0] = 32;
         response[1] = serialNumber;
         response[2] = playernum;//攻撃プレイヤーのID
@@ -254,6 +271,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         resopnse[5] = hpnum;//効果の引数1
         resopnse[6] = hpnum;//被攻撃プレイヤーのhp
         sendBinaryData(ws,response);
+        */
       }
       
   });
