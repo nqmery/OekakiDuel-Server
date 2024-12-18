@@ -199,6 +199,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
           let pid = useData[2];//プレイヤーID 0 or 1
           let send_data = [31, serialNumber, pid, selectedCard.id];//データの送信
           turnManege++;//ターンのどこなのかを管理
+
           sendBinaryData(ws,send_data);
           if(turnManege === 2){
             EffBeforeBattle();
