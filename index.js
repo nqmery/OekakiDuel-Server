@@ -52,24 +52,84 @@ class Card{
     //効果の発動
     switch(this.effID){
       case 10:
-        //効果１０必ず先制攻撃
-        if(turnManege === 3 || turnManege === 4){
-          spd = 999;
+        //効果10
+         //確実に先制攻撃
+        if(SelectCard.player === byte[3]){
+          SelectCard.spd = 0;
+        }
+        else if(SelectCard.player === byte[3]){
+          SelectCard.spd = 0;
         }
         break;
       case 11:
-        //効果１１攻撃無効か
-        if(turnManege === 3 || turnManege === 4){
+        //効果11
+        //相手の攻撃無効化
+        if(SelectCard.player === byte[3]){
+          SelectCard.atk = 0;
+        }
+        else if(SelectCard.player === byte[3]){
+          SelectCard.atk = 0;
         }
         break;
       case 12:
-        //効果１２終了時に全回復
-        hp = 200;
+        //効果12
+        //ターン開始時に体力全回復
+        if(SelectCard.player === byte[3]){
+          Player1.hp = 200;
+        }
+        else if(SelectCard.player === byte[3]){
+          Player2.hp = 200;
+        }
         break;
       case 13:
-        //効果１３両社のHpを全回復
+        //効果13
+         //ターン終了時に両者体力全回復
         Player1.hp = 200;
         Player2.hp = 200;
+         //ダメージの送信
+         response[0] = 32;
+         response[1] = serialNumber;
+         response[2] = playernum;//攻撃プレイヤーのID
+         response[3] = playernum+1 % 2;//被攻撃プレイヤーのID
+         response[4] = Damagevalue;//特殊効果番号
+         resopnse[5] = hpnum;//効果の引数1
+         resopnse[6] = hpnum;//被攻撃プレイヤーのhp
+         sendBinaryData(ws,response);
+        break;
+      case 14:
+        //効果14
+        //相手の防御力が自分の防御力の3倍以上とかのときに相手の体力を残り5くらいまで減らす
+        if((SelectCard.player === byte[3]) && (SelectCard.def >= 3*SelectCard.def)){
+          Player2.hp = 5;
+        }
+        else if((SelectCard.player === byte[3]) && (SelectCard.def >= 3*SelectCard.def)){
+          Player1.hp = 5;
+        }
+        break;
+      case 15:
+        //効果15
+         //相手の素早さを下げる
+        if(SelectCard.player === byte[3]){
+          SelectCard = SelectCard - 20;
+        }
+        else if(SelectCard.player === byte[3]){
+          SelectCard = SelectCard - 20;
+        }
+        break;
+      case 16:
+        //効果16
+        //両者の攻撃無効化
+        SelectCard.atk = 0;
+        SelectCard.atk = 0;
+        break;
+      case 18:
+        //効果８
+        break;
+      case 9:
+        //効果９
+        break;
+      case 10:
+        //効果１０
         break;
       default:
         //効果なし
@@ -81,16 +141,14 @@ const cards  = Array.from({ length: 2 }, () => Array(5));//こっちの方がか
 const selectedCard = Array.from({ length: 2 }, () => Array(1));
 
 
-
-
-
+let nextplayerID = 0;//最初にアクセスしたプレイヤーのID
 wss.on('connection', function(ws) {//クライアントが接続してきたときの処理
   console.log("client joined.");
-  const responsetest = new ArrayBuffer(3);
+  const PlayerID = nextplayerID
+  nextplayerID++;    //次にアクセスするプレイヤーのID
+  const responsetest = new ArrayBuffer(1);
   const view = new DataView(responsetest);
-  view.setUint8(0, 30);
-  view.setUint8(1, 12);
-  view.setUint8(2, 20);
+  view.setUint8(0, PlayerID);//クライアントにプレイヤーIDを送信
   ws.send(responsetest);
 
   ws.on('message', function(data) {//クライアントからメッセージを受信したときの処理
@@ -106,24 +164,137 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
 
       //通信種別による関数の呼び出し
       switch(useData[0]){//種別に応じて関数を呼び出す
-        case 1:
+        case 30://ラウンドが始まったことをクライアントに送信
+          serialNumber++;
+          turnManege = 1;
+          roundnum++; //クライアントが２回アクセスするから要検証
+          send_data = [30, turnManege, roundnum];
+          sendBinaryData(ws, send_data);
           break;
-        case 30:
-
+        case 32:
+          serialNumber++;
+           //ダメージの送信
+           /*
+           response[0] = 32;
+           response[1] = serialNumber;
+           response[2] = playernum;//攻撃プレイヤーのID
+           response[3] = playernum+1 % 2;//被攻撃プレイヤーのID
+           response[4] = Damagevalue;//特殊効果番号
+           resopnse[5] = hpnum;//効果の引数1-------渡す必要あるのかな
+           resopnse[6] = hpnum;//被攻撃プレイヤーのhp
+           sendBinaryData(ws,response);
+           */
+          //send_data = [32, 12, 12, 23];
+          send_data = [32,serialNumber, SelectCard.player, SelectCard.player,SelectCard.eff,hpnum]
+          
           break;
+        case 33:
+          serialNumber++;
+          break;  
         case 36://選択カードの受信と選択カードの開示
           let selectedCard = CardSelect(useData);//選ばれたカードの取得
           let pid = useData[2];//プレイヤーID 0 or 1
           let send_data = [31, serialNumber, pid, selectedCard.id];//データの送信
           turnManege++;//ターンのどこなのかを管理
+
           sendBinaryData(ws,send_data);
           if(turnManege === 2){
             EffBeforeBattle(pid);
           }
           break;
+        }else{
+          serialNumber++;
+          cid = 0;
+              cards[pid][cid] = new Card(cards[2],cards[3],cards[4],cards[5],cards[6],cards[7]); //ATK,DEF,SPD,EFF,カード番,プレイヤー番号
+              cards.push(cards[pid][cid]);
+          cid++;
+          console.log(cid);
+        if(cid == 10){
+          flag == 2;
+          console.log("flagが2になったよ");
+        }  
       }
-
+      }
     }
+    console.log("現在のターン数",roundnum);
+    //カード情報の保存
+    if (typeof(data) === "string") {
+      console.log("Error: バイナリーではないデータが送信されました");
+    } else {
+      BinaryTranslation(data);
+    }
+    
+    
+    //選んだカードの開示
+    /*
+   function ShowSelectCard(){
+        //プレイヤー１が選択したカード
+        if(byte[3] === cards[i].player && cards[i].player === 0 && byte[4] === cards[i].id){
+           SelectCard = cards[i];
+        }
+        //プレイヤー２が選択したカード
+        if(byte[3] === cards[i].player && cards[i].player === 1 && byte[4] === cards[i].id){
+           SelectCard = cards[i];
+        }
+      }
+    */
+    
+    
+    //バトル前に発動する効果
+    function UniqueEffectBefore(){
+    //特殊効果発動順序
+     if(SelectCard.spd > SelectCard.spd){
+      SelectCard.eff.effectActive();
+      SelectCard.eff.effectActive();  
+     }
+     else{
+      SelectCard.eff.effectActive();
+      SelectCard.eff.effectActive();  
+     }
+    }
+      function  BattleFlow(){
+      //カードの速さを比較
+      if(SelectCard.spd > SelectCard.spd){
+        //先にプレイヤー１が攻撃
+        BattleCalc(SelectCard.player, SelectCard.atk, SelectCard.def, Player2.hp); 
+        //後からプレイヤー２が攻撃
+        BattleCalc(SelectCard.player, SelectCard.atk, SelectCard.def, Player1.hp);
+      } else {
+        //先にプレイヤー２が攻撃
+        BattleCalc(SelectCard.player, SelectCard.atk, SelectCard.def, Player1.hp);
+        //後からプレイヤー１が攻撃
+        BattleCalc(SelectCard.player, SelectCard.atk, SelectCard.def, Player2.hp);
+      } 
+    }
+    
+
+      // バトル中のダメージ計算
+      function BattleCalc(playernum, atknum, defnum, hpnum){
+        
+        //負の値にならないようにして計算結果を定義
+        Damagevalue = Math.max(defnum - atknum, 0); 
+        //HPの更新
+        hpnum = Math.max(hpnum - Damagevalue, 0);
+        if(playernum === 0){
+          Player1.hp = hpnum; //クライアント１のHP更新
+        }
+        else if (playernum === 1){
+          Player2.hp = hpnum; //クライアント２のHP更新
+        }
+
+        //ダメージの送信
+        /*
+        response[0] = 32;
+        response[1] = serialNumber;
+        response[2] = playernum;//攻撃プレイヤーのID
+        response[3] = playernum+1 % 2;//被攻撃プレイヤーのID
+        response[4] = Damagevalue;//特殊効果番号
+        resopnse[5] = hpnum;//効果の引数1
+        resopnse[6] = hpnum;//被攻撃プレイヤーのhp
+        sendBinaryData(ws,response);
+        */
+      }
+      
   });
   ws.on('close', function() {
     console.log("client left.");
@@ -179,31 +350,59 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
   ws.send(buffer);
 }
 
+// console.log("現在のターン数",roundnum);
+// //カード情報の保存
+// if (typeof(data) === "string") {
+//   console.log("Error: バイナリーではないデータが送信されました");
+// } else {
+//   BinaryTranslation(data);
+// }
+
+// //現在ターン数の確認してターン開始
+// if(byte[0]===30 && roundnum <= 5) {
+//   roundnum = byte[2];
+// }
+
+
+// if(byte[0] === 32 && roundnum <= 5){
+// //特殊効果発動順序
+// if(SelectCard1.spd > SelectCard2.spd){
+//   if(byte[5] === 0){
+//     BattleFlow();
+//   }
+//   //確実に先制攻撃
+//   if(byte[5] === 1){
+//     if(SelectCard1.player === byte[3]){
+//       SelectCard2.spd = 0;
+//     }else{
+//       SelectCard1.spd = 0;
+//     }
+//   }
 //   //相手の攻撃無効化
 //   if(byte[5] === 2){
-//     if(SelectCard1.player === byte[3]){
-//       SelectCard2.atk = 0;
+//     if(SelectCard.player === byte[3]){
+//       SelectCard.atk = 0;
 //     }else{
-//       SelectCard1.atk = 0;
+//       SelectCard.atk = 0;
 //     }
 //   }
 // }
 
 //   function  BattleFlow(){
 //   //カードの速さを比較
-//   if(SelectCard1.spd > SelectCard2.spd){
+//   if(SelectCard.spd > SelectCard.spd){
 //     //先にプレイヤー１が攻撃
-//     BattleCalc(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp); 
-//     BattleCalc(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp); 
+//     BattleCalc(SelectCard.player, SelectCard.atk, SelectCard.def, Player2.hp); 
+//     BattleCalc(SelectCard.player, SelectCard.atk, SelectCard.def, Player2.hp); 
 //     //後からプレイヤー２が攻撃
-//     BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
-//     BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
+//     BattleCalc(SelectCard.player, SelectCard.atk, SelectCard.def, Player1.hp);
+//     BattleCalc(SelectCard.player, SelectCard.atk, SelectCard.def, Player1.hp);
 //   } else {
 //     //先にプレイヤー２が攻撃
-//     BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
-//     BattleCalc(SelectCard1.player, SelectCard2.atk, SelectCard1.def, Player1.hp);
+//     BattleCalc(SelectCard.player, SelectCard.atk, SelectCard.def, Player1.hp);
+//     BattleCalc(SelectCard.player, SelectCard.atk, SelectCard.def, Player1.hp);
 //     //後からプレイヤー１が攻撃
-//     BattleCalc(SelectCard2.player, SelectCard1.atk, SelectCard2.def, Player2.hp);
+//     BattleCalc(SelectCard.player, SelectCard.atk, SelectCard.def, Player2.hp);
 //   }
 // }
 // }
