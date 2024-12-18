@@ -167,8 +167,6 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
           send_data = [30, turnManege, roundnum];
           sendBinaryData(ws, send_data);
           break;
-        case 31:
-          break;  
         case 32:
           serialNumber++;
            //ダメージの送信
@@ -190,7 +188,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
           serialNumber++;
           break;  
         case 36://選択カードの受信と選択カードの開示
-        let pid = useData[2];//プレイヤーID 0 or 1
+        let pid = useData[1];//プレイヤーID 0 or 1
         if(flag == 2){
           let selectedCard = CardSelect(useData); //選択したカード
           send_data = [31, serialNumber, pid, selectedCard.id];
@@ -199,11 +197,12 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         }else{
           serialNumber++;
           cid = 0;
-              cards[pid][cardnum] = new Card(cards[1],cards[2],cards[3],cards[4],cards[5],cards[6]);//ATK,DEF,SPD,EFF,カード番,プレイヤー番号
+              cards[pid][cid] = new Card(cards[2],cards[3],cards[4],cards[5],cards[6],cards[7]); //ATK,DEF,SPD,EFF,カード番,プレイヤー番号
               cards.push(cards[pid][cid]);
           cid++;
         if(cid == 10){
           flag == 2;
+          console.log("flagが2になったよ");
         }  
       }
       }
