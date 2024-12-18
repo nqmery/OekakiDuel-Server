@@ -163,9 +163,14 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
       switch(useData[0]){//種別に応じて関数を呼び出す
         case 1:
           break;
-        case 30:
-
+        case 30://ラウンドが始まったことをクライアントに送信
+          turnManege = 1;
+          roundnum++; //クライアントが２回アクセスするから要検証
+          send_data = [30, turnManege, roundnum];
+          sendBinaryData(ws, send_data);
           break;
+        case 31://
+          break;  
         case 36://選択カードの受信と選択カードの開示
           let selectedCard = CardSelect(useData);
           let pid = useData[2];//プレイヤーID 0 or 1
@@ -173,10 +178,6 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
           sendBinaryData(ws,send_data);
           break;
       }
-
-    }
-      }
-
     }
     console.log("現在のターン数",roundnum);
     //カード情報の保存
@@ -186,10 +187,6 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
       BinaryTranslation(data);
     }
     
-    //現在ターン数の確認してターン開始
-    if(byte[0]===30 && roundnum <= 5) {
-      roundnum = byte[2];
-    }
     
     //選んだカードの開示
     if(byte[0] === 31 && roundnum <= 5){
