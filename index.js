@@ -130,6 +130,8 @@ class Effect{
   }
 }
 
+let clients = []; // クライアントを格納する配列
+
 wss.on('connection', function(ws) {//クライアントが接続してきたときの処理
   console.log("client joined.");
   // send "hello world" interval
@@ -137,10 +139,13 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
 
   // send random bytes interval
   //const binaryInterval = setInterval(() => ws.send(crypto.randomBytes(8).buffer), 110);
-
+  clients.push(ws);
 
   ws.on('message', function(data) {//クライアントからメッセージを受信したときの処理
-    if(flag == 0){//画像の送受信用
+    //console.log("received data" + Array.from(data).join(", "));
+    console.log(data);
+    TestSendImg(ws, data);
+    /*if(flag == 0){//画像の送受信用
       //画像の受信
       //画像の受信が完了したらflag = 1にする
     }else{//以下に
@@ -230,7 +235,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         resopnse[5] = hpnum;//効果の引数1
         resopnse[6] = hpnum;//被攻撃プレイヤーのhp
         sendBinaryData(ws,response);
-      }
+      }*/
       
   });
   ws.on('close', function() {
@@ -287,4 +292,11 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
   console.log("send_data",buffer); 
   serialNumber++;
   ws.send(buffer);
+}
+function TestSendImg(sender, message) {
+  clients.forEach(client => {
+    if (client !== sender && client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
 }
