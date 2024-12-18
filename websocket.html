@@ -53,12 +53,31 @@
 
             socket.onopen = () => {
                 console.log("Connected to WebSocket at " + urlInput);
-                logMessage(`Connected to ${urlInput}`);
-            };
+                    logMessage(`Connected to ${urlInput}`);
+                };
 
-            socket.onmessage = (event) => {
-                console.log("Message from server: ", event.data);
-                logMessage(event.data);
+            socket.onmessage = function(event) {
+                if (event.data instanceof Blob) {//ArrayBufferじゃなかったのはなんでだ？
+                    const reader = new FileReader();
+                    // Blob を ArrayBuffer に変換する
+                    reader.onload = function() {
+                    const arrayBuffer = reader.result;
+                    const byteArray = new Uint8Array(arrayBuffer);
+                    // 数値の列としてデータを表示
+                    console.log("Binary from Server: ", byteArray);
+                    // バイトごとの値をログに表示する
+                    for (let i = 0; i < byteArray.length; i++) {
+                        console.log(`Byte ${i}: ${byteArray[i]}`);
+                    }
+                    // 数値の配列をログに出力
+                    logMessage(`Received binary data as numbers: ${byteArray.join(", ")}`);
+                    };
+                    // FileReaderを使ってBlobをArrayBufferに読み込む
+                    reader.readAsArrayBuffer(event.data);
+                } else {
+                    console.log("Message from server: ", event.data);
+                    logMessage(event.data);
+                }
             };
 
             socket.onerror = (error) => {
