@@ -35,8 +35,8 @@ class Player {
   }
 }
 let Players = Array.from({ length: 2 }, () => Array(1));//プレイヤーのインスタンス初期値
-Players[0][0] = new Player(0, 1); //プレイヤー１のインスタンス初期値
-Players[1][0] = new Player(1, 1); //プレイヤー2のインスタンス初期値
+Players[0][0] = new Player(0); //プレイヤー１のインスタンス初期値
+Players[1][0] = new Player(1); //プレイヤー2のインスタンス初期値
 class Card{
   constructor(id,player,atk,def,spd,effID){
     this.player = player;//どっちのプレイヤーのカードか このパラメータ使わないかも　cards配列で管理するから
