@@ -31,7 +31,7 @@ let cardnum = 0;      // カードの枚数
 class Player {
   constructor(id) {
     this.id = id;
-    hp = 10000;//とりあえず50
+    this.hp = 10000;//とりあえず50
   }
 }
 let Players = Array.from({ length: 2 }, () => Array(1));//プレイヤーのインスタンス初期値
@@ -246,6 +246,14 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
   }
   console.log("send_data",buffer); 
   ws.send(buffer);
+}
+
+function CardSelect(data){
+  //カード選択
+  let pid = data[2];//プレイヤーID
+  let cid = data[3];//カードID
+  let selectedCard = cards[pid][cid];
+  return selectedCard;
 }
 
 function BinaryPassThrough(sender, message) {
