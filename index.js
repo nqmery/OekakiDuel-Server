@@ -203,8 +203,6 @@ function BinaryTranslation(recv_data){//信号を元に戻す どう考えても
     //console.log("バイナリデータ",dataset);
     return dataset;  
   }
-
-
 }
 
 function sendBinaryData(ws,send_data){//信号をバイナリに変換して送信
@@ -252,6 +250,9 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
       view.setUint8(9, highByteHP2); // HPの上位バイトを格納
       view.setUint8(10, lowByteHP2); // HPの下位バイトを格納
       break;
+      case 90:
+      view.setUint8(2, send_data[2]); // 勝者
+      break;  
   }
   console.log("send_data",buffer); 
   //ws.send(buffer);
@@ -341,6 +342,24 @@ function EndTurn(ws){//turnManegeが9の時に呼び出す
   sendBinaryData(ws, [30, serialNumber, roundnum]);//
 }
 
+function EndTurn(ws){//turnManegeが9の時に呼び出す
+  //ターン終了処理
+  //特殊効果がある場合は清算
+  if(roundnum === 5 || Players[0].hp === 0 || Players[1].hp === 0){
+  //ゲーム終了処理
+  if(Players[0].hp === 0 || Players[1].hp > Players[0].hp){//プレイヤー１のHPが0 または2の方が体力が多い
+    sendBinaryData(ws, [90, serialNumber,1]);//ゲーム終了
+  }else if(Players[1].hp === 0 || Players[0].hp > Players[1].hp){//プレイヤー２のHPが0
+    sendBinaryData(ws, [90, serialNumber,0]);//ゲーム終了
+  }else{
+  //引き分け
+  sendBinaryData(ws, [90, serialNumber,2]);//ゲーム終了
+  }
+}
+ turnManege = 0;
+ roundnum++;
+ sendBinaryData(ws, [30, serialNumber, roundnum]);//
+}
 // 1:カード選択処理 
 // 2:カード選択処理　
 // 3:バトル前特殊効果1
