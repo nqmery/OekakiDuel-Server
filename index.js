@@ -67,14 +67,14 @@ class Effect{
         //効果10
          //確実に先制攻撃
         if(turnManege === 3|| turnManege === 4){
-          selectedCard[this.player + 1 % 2][id].spd = 0;//相手の速さを0にする...0→idに変更
+          SelectedCard[this.player + 1 % 2][id].spd = 0;//相手の速さを0にする...0→idに変更
         }
         break;
       case 11:
         //効果11
         //相手の攻撃無効化
         if(turnManege === 3|| turnManege === 4){
-          selectedCard[this.player + 1 % 2][id].atk = 0;
+          SelectedCard[this.player + 1 % 2][id].atk = 0;
         }
         break;
       case 12:
@@ -93,7 +93,7 @@ class Effect{
         //効果14
         //相手の防御力が自分の防御力の3倍以上とかのときに相手の体力を残り5くらいまで減らす
         if(turnManege === 7 || turnManege === 8){
-          if(selectedCard[this.player + 1 % 2][0].def >= this.def * 3){
+          if(SelectedCard[this.player + 1 % 2][0].def >= this.def * 3){
             Players[this.player + 1 % 2][id].hp = 5;
           }
         }
@@ -102,15 +102,15 @@ class Effect{
         //効果15
          //相手の素早さを下げる
         if(turnManege === 3|| turnManege === 4){
-          selectedCard[this.player + 1 % 2][id].spd = -20;
+          SelectedCard[this.player + 1 % 2][id].spd = -20;
         }
         break;
       case 16:
         //効果16
         //両者の攻撃無効化
         if(turnManege === 3|| turnManege === 4){
-          selectedCard[this.player][id].atk = 0;
-          selectedCard[this.player + 1 % 2][id].atk = 0;
+        SelectedCard[this.player][id].atk = 0;
+          SelectedCard[this.player + 1 % 2][id].atk = 0;
         }
         break;
     }
