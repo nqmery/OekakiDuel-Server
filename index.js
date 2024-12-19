@@ -144,21 +144,29 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
   ws.on('message', function(data) {//クライアントからメッセージを受信したときの処理
     //console.log("received data" + Array.from(data).join(", "));
     console.log(data);
-    TestSendImg(ws, data);
-    /*if(flag == 0){//画像の送受信用
+    flag = 1;
+    if(flag == 0){//画像の送受信用
       //画像の受信
       //画像の受信が完了したらflag = 1にする
     }else{//以下に
       const useData = BinaryTranslation(data);
+      console.log("useData[0]: ",useData[0])
       switch(useData[0]){//種別に応じて関数を呼び出す
         case 1:
           break;
+
+        case 24: //カード情報の受信・送信
+        //カード情報をもう片方のクライアントに送信
+        BinaryPassThrough(ws, data);
+        console.log("PassThrough Done");
+        //カード情報の保存
+
       }
 
     }
     console.log("現在のターン数",roundnum);
     //カード情報の保存
-    if (typeof(data) === "string") {
+    /*if (typeof(data) === "string") {
       console.log("Error: バイナリーではないデータが送信されました");
     } else {
       BinaryTranslation(data);
@@ -253,8 +261,8 @@ function BinaryTranslation(recv_data){//信号を元に戻す どう考えても
   //ws.send("[Server]binary received from client -> " + Array.from(recv_data).join(", ") + "");//確認用
   // cards[0] = new Card(1,1,50,50,50,50); //例クライアント１が選択したカード
   // cards[1] = new Card(1,2,23,23,23,23); //例クライアント２が選択したカード、どうやってクライアントを区別するんだっけ
-  console.log("binary received from client -> " + Array.from(recv_data).join(", ") + "");
-  console.log("バイナリデータ",dataset);
+  //console.log("binary received from client -> " + Array.from(recv_data).join(", ") + "");
+  //console.log("バイナリデータ",dataset);
   return dataset;
 
 }
@@ -293,7 +301,7 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
   serialNumber++;
   ws.send(buffer);
 }
-function TestSendImg(sender, message) {
+function BinaryPassThrough(sender, message) {
   clients.forEach(client => {
     if (client !== sender && client.readyState === WebSocket.OPEN) {
       client.send(message);
