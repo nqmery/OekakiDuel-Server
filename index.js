@@ -49,18 +49,20 @@ class Card{
   effectActive(){
     //効果の発動
     switch(this.eff){
+      case 1:
+        //通常攻撃
       case 10:
         //効果10
          //確実に先制攻撃
         if(turnManege === 3|| turnManege === 4){
-          selectedCard[this.player + 1 % 2][0].spd = 0;//相手の速さを0にする...0→idに変更
+          selectedCard[((this.player + 1)) % 2][0].spd = 0;//相手の速さを0にする...0→idに変更
         }
         break;
       case 11:
         //効果11
         //相手の攻撃無効化
         if(turnManege === 3|| turnManege === 4){
-          selectedCard[this.player + 1 % 2][0].atk = 0;
+          selectedCard[((this.player + 1)) % 2][0].atk = 0;
         }
         break;
       case 12:
@@ -79,8 +81,8 @@ class Card{
         //効果14
         //相手の防御力が自分の防御力の3倍以上とかのときに相手の体力を残り5くらいまで減らす
         if(turnManege === 7 || turnManege === 8){
-          if(selectedCard[this.player + 1 % 2][0].def >= this.def * 3){
-            Players[this.player + 1 % 2][0].hp = 5;
+          if(selectedCard[(this.player + 1) % 2][0].def >= this.def * 3){
+            Players[(this.player + 1) % 2][0].hp = 5;
           }
         }
         break;
@@ -88,7 +90,7 @@ class Card{
         //効果15
          //相手の素早さを下げる
         if(turnManege === 3|| turnManege === 4){
-          selectedCard[this.player + 1 % 2][0].spd = -20;
+          selectedCard[(this.player + 1) % 2][0].spd = -20;
         }
         break;
       case 16:
@@ -96,7 +98,7 @@ class Card{
         //両者の攻撃無効化
         if(turnManege === 3|| turnManege === 4){
           selectedCard[this.player][0].atk = 0;
-          selectedCard[this.player + 1 % 2][0].atk = 0;
+          selectedCard[(this.player + 1) % 2][0].atk = 0;
         }
         break;
     }
@@ -146,7 +148,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
           serialNumber++;
           let pid = useData[2];//プレイヤーID 0 or 1
           let cid = useData[3];//カードID 0~4
-          selectedCard[pid][0] = CardSelect(useData);//クライアント１に選ばれたカードの取得
+          selectedCard[pid][0] = CardSelect(useData);//クライアントに選ばれたカードの取得,0はいじらない
           let send_data = [31, serialNumber, pid, cid];//データの送信
           turnManege++;//ターンのどこなのかを管理
           sendBinaryData(ws,send_data);
@@ -160,7 +162,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         console.log("PassThrough Done");
         //カードのインスタンス化
         cardnum++;
-        cards[useData[1]][useData[2]] = new Card(useData[2],useData[1],useData[3],useData[4],useData[5],useData[6]);//種別,プレイヤー番号,カード番号,攻撃力,防御力,速さ,特殊効果
+        cards[useData[1]][useData[2]] = new Card(useData[2],useData[1],useData[3],useData[4],useData[5],useData[6],useData[7],useData[8],useData[9]);//種別,プレイヤー番号,カード番号,攻撃力,防御力,速さ,特殊効果
         if(cardnum === 10){
           //カードの選択フェーズに移行
           sendBinaryData(ws, [30,serialNumber,1]);//ターン開始
@@ -301,6 +303,7 @@ function EffBeforeBattle(pid){//turnManegeが3の時に呼び出す
   //バトル前の特殊効果の処理
   selectedCard[pid][0].effectActive();
   turnManege++;
+  sendBinaryData(ws, [32,serialNumber,pid,(pid+1)%2,selectedCard[9],Players[(pid+1)%2][0].hp,Players[pid][0].hp])//バトル前効果をクライアントに送信 
   if(turnManege === 5){
     BattleFlow();
   }else{
