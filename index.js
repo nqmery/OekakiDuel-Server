@@ -248,6 +248,8 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
   });
   ws.on('close', function() {
     console.log("client left.");
+    // クライアントを配列から削除
+    clients = clients.filter(client => client !== ws);
   });
 });
 
