@@ -143,20 +143,6 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
       //通信種別による関数の呼び出し
       console.log("useData[0]: ",useData[0])
       switch(useData[0]){//種別に応じて関数を呼び出す
-        case 30://ラウンドが始まったことをクライアントに送信
-          serialNumber++;
-          turnManege = 1;
-          roundnum++; //クライアントが２回アクセスするから要検証
-          send_data = [30, turnManege, roundnum];
-          sendBinaryData(ws, send_data);
-          break;
-        case 32:
-          serialNumber++;
-          send_data = [32,serialNumber, Player[0][0].id, Player[0][1],selectedCard1.effID,Player[0][1].hp];
-          sendBinaryData(ws, send_data); //クライアント１が与えたダメージを送る
-          send_data = [32,serialNumber, Player[0][1].id, Player[0][0],selectedCard2.effID,Player[0][0].hp];
-          sendBinaryData(ws, send_data); //クライアント２が与えたダメージを送る
-          break;
         case 33:
           serialNumber++;
           break;  
@@ -268,6 +254,11 @@ function  BattleFlow(){
     //後からプレイヤー１が攻撃
     BattleCalc(selectedCard2.player, selectedCard1.atk, selectedCard2.def, Player[0][1].hp);
   } 
+  serialNumber++;
+  send_data = [32,serialNumber, Player[0][0].id, Player[0][1],selectedCard1.effID,Player[0][1].hp];
+  sendBinaryData(ws, send_data); //クライアント１が与えたダメージを送る
+  send_data = [32,serialNumber, Player[0][1].id, Player[0][0],selectedCard2.effID,Player[0][0].hp];
+  sendBinaryData(ws, send_data); //クライアント２が与えたダメージを送る
 }
 
 // バトル中のダメージ計算
