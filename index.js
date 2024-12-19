@@ -119,9 +119,10 @@ wss.on("connection", function (ws) {
   clients.push(ws);
   const PlayerID = nextplayerID;
   nextplayerID++; //次にアクセスするプレイヤーのID
-  const responsetest = new ArrayBuffer(1);
+  const responsetest = new ArrayBuffer(2);//接続時のレスポンス
   const view = new DataView(responsetest);
-  view.setUint8(0, PlayerID); //クライアントにプレイヤーIDを送信
+  view.setUint8(0, 10); //通信種別:通信確立
+  view.setUint8(1, PlayerID); //クライアントにプレイヤーIDを送信
   ws.send(responsetest);
 
   // 接続が2人になった場合、全クライアントに通知
