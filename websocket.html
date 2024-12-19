@@ -162,6 +162,16 @@
             input.placeholder = "0-255";
             container.appendChild(input);
         }
+
+        function removeByteInput(){
+            const container = document.getElementById("byteInputsContainer");
+            const inputs = container.getElementsByClassName("byte-input");
+            if (inputs.length > 0) {
+                container.removeChild(inputs[inputs.length - 1]);
+            } else {
+                alert("No byte inputs to remove.");
+            }
+        }
     </script>
 </head>
 <body>
@@ -186,6 +196,7 @@
         </div>
         <button onclick="addByteInput()">Add Byte</button>
         <button onclick="sendByteArray()">Send Byte Array</button>
+        <button onclick="removeByteInput()">Remove Bytes</button>
     </div>
 
     <div id="logContainer">

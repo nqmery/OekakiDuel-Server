@@ -34,9 +34,7 @@ class Player {
     this.hp = 10000;//とりあえず50
   }
 }
-let Players = Array.from({ length: 2 }, () => Array(1));//プレイヤーのインスタンス初期値
-Players[0][0] = new Player(0); //プレイヤー１のインスタンス初期値
-Players[1][0] = new Player(1); //プレイヤー2のインスタンス初期値
+let Players = [new Player(0), new Player(1)]; //プレイヤーのインスタンス初期値
 class Card{
   constructor(id,player,atk,def,spd,effID){
     this.player = player;//どっちのプレイヤーのカードか このパラメータ使わないかも　cards配列で管理するから
@@ -53,21 +51,21 @@ class Card{
         //効果10
          //確実に先制攻撃
         if(turnManege === 3|| turnManege === 4){
-          selectedCard[this.player + 1 % 2][0].spd = 0;//相手の速さを0にする...0→idに変更
+          selectedCard[(this.player + 1) % 2][0].spd = 0;//相手の速さを0にする...0→idに変更
         }
         break;
       case 11:
         //効果11
         //相手の攻撃無効化
         if(turnManege === 3|| turnManege === 4){
-          selectedCard[this.player + 1 % 2][0].atk = 0;
+          selectedCard[(this.player + 1) % 2][0].atk = 0;
         }
         break;
       case 12:
         //効果12
         //ターン終了時に自分の体力全回復
         if(turnManege === 7 || turnManege === 8){
-          Players[this.player][0].hp = 200;
+          Players[this.player].hp = 10000;
         }
         break;
       case 13:
@@ -79,8 +77,8 @@ class Card{
         //効果14
         //相手の防御力が自分の防御力の3倍以上とかのときに相手の体力を残り5くらいまで減らす
         if(turnManege === 7 || turnManege === 8){
-          if(selectedCard[this.player + 1 % 2][0].def >= this.def * 3){
-            Players[this.player + 1 % 2][0].hp = 5;
+          if(selectedCard[(this.player + 1) % 2][0].def >= this.def * 3){
+            Players[(this.player + 1) % 2][0].hp = 5;
           }
         }
         break;
@@ -88,15 +86,15 @@ class Card{
         //効果15
          //相手の素早さを下げる
         if(turnManege === 3|| turnManege === 4){
-          selectedCard[this.player + 1 % 2][0].spd = -20;
+          selectedCard[(this.player + 1) % 2][0].spd -= 20;
         }
         break;
       case 16:
         //効果16
         //両者の攻撃無効化
         if(turnManege === 3|| turnManege === 4){
+          selectedCard[(this.player + 1) % 2][0].atk = 0;
           selectedCard[this.player][0].atk = 0;
-          selectedCard[this.player + 1 % 2][0].atk = 0;
         }
         break;
     }
@@ -182,7 +180,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
 });
 
 server.listen(port, function() {
-  console.log('Listening on http://localhost:${port}');
+  console.log(`Listening on http://localhost:${port}`);
 });
 
 function BinaryTranslation(recv_data){//信号を元に戻す どう考えてもいるわこれ
@@ -240,8 +238,8 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
       const recentHP = send_data[6]; // hpの関係量
       const highByteHP = (recentHP >> 8) & 0xFF; // 上位バイト
       const lowByteHP = recentHP & 0xFF; // 下位バイト
-      view.setUint8(6, highByteHP); // HPの上位バイトを格納
-      view.setUint8(7, lowByteHP); // HPの下位バイトを格納
+      view.setUint8(7, highByteHP); // HPの上位バイトを格納
+      view.setUint8(8, lowByteHP); // HPの下位バイトを格納
       break;
   }
   console.log("send_data",buffer); 
@@ -282,7 +280,7 @@ function  BattleFlow(){//turnManegeが5の時に呼び出す
 // バトル中のダメージ計算
 function BattleCalc(playernum, atknum, defnum, hpnum){//被攻撃側のプレイヤー番号、攻撃力、防御力、HP
   //負の値にならないようにして計算結果を定義
-  Damagevalue = Math.max(defnum - atknum, 0); 
+  let Damagevalue = Math.max(defnum - atknum, 0); 
   //HPの更新
   hpnum = Math.max(hpnum - Damagevalue, 0);
   if(playernum === 0){
@@ -293,7 +291,7 @@ function BattleCalc(playernum, atknum, defnum, hpnum){//被攻撃側のプレイ
   }
   turnManege++;
   if(turnManege === 7){
-    EffAfterBattle(playernum);
+    EffAfterBattle(playernum, ws);
   }
 }
 
@@ -304,28 +302,28 @@ function EffBeforeBattle(pid){//turnManegeが3の時に呼び出す
   if(turnManege === 5){
     BattleFlow();
   }else{
-    EffBeforeBattle(pid + 1 %2);
+    EffBeforeBattle((pid + 1) % 2);
   }
 }
 
-function EffAfterBattle(pid){//turnManegeが7の時に呼び出す
+function EffAfterBattle(pid, ws){//turnManegeが7の時に呼び出す
   //バトル後の特殊効果の処理
   selectedCard[pid][0].effectActive();
   turnManege++;
   if(turnManege === 9){
     //ターン終了処理
-    EndTurn();
+    EndTurn(ws);
   }else{
-    EffAfterBattle(pid + 1 %2);
+    EffAfterBattle((pid + 1) % 2, ws);
   }
 }
 
-function EndTurn(){//turnManegeが9の時に呼び出す
+function EndTurn(ws){//turnManegeが9の時に呼び出す
   //ターン終了処理
   //特殊効果がある場合は清算
-  send_data = [32,serialNumber, Players[0][0].id, Players[1][0],selectedCard[0][0].eff,Players[1][0].hp];//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
+  send_data = [32,serialNumber, Players[0][0].id, Players[1][0].id, selectedCard[0][0].eff, Players[1][0].hp];//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
   sendBinaryData(ws, send_data); //クライアント１が与えたダメージを送る
-  send_data = [32,serialNumber, Players[1][0].id, Players[0][0],selectedCard[1][0].eff,Players[0][0].hp];
+  send_data = [32,serialNumber, Players[1][0].id, Players[0][0].id, selectedCard[1][0].eff, Players[0][0].hp];
   sendBinaryData(ws, send_data); //クライアント２が与えたダメージを送る
   turnManege = 0;
   roundnum++;
