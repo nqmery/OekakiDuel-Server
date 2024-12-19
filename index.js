@@ -17,7 +17,6 @@ const turnManege = 0;   // 1ターンのどこに該当するかを保持する
 ↓プレイやーごとに行うので2回
 1:カード選択処理 
 2:カード選択処理　
-
 3:バトル前特殊効果
 4:バトル前特殊効果
 5:バトル処理　早いほう
@@ -32,13 +31,13 @@ class Player {
   constructor(id,ip,hp) {
     this.ip = ip;
     this.id = id;
-    hp = 200;//とりあえず50
+    hp = 10000;//とりあえず50
   }
 }
 
 Players = Array.from({ length: 2 }, () => Array(1));//プレイヤーのインスタンス初期値
-Players[0][0] = new Player(0, 1, 200); //プレイヤー１のインスタンス初期値
-Players[0][1] = new Player(1, 1, 200); //プレイヤー2のインスタンス初期値
+Players[0][0] = new Player(0, 1, 10000); //プレイヤー１のインスタンス初期値
+Players[0][1] = new Player(1, 1, 10000); //プレイヤー2のインスタンス初期値
 let selectedCard1;
 let selectedCard2;
 class Card{
