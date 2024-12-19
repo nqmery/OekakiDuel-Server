@@ -117,10 +117,15 @@ class Effect{
   }
 }
 
+let clients = []; // クライアントを格納する配列
+
+const cards  = Array.from({ length: 2 }, () => Array(5));//こっちの方がかんりしやすい
+const selectedCard = Array.from({ length: 2 }, () => Array(1));
 
 let nextplayerID = 0;//最初にアクセスしたプレイヤーのID
 wss.on('connection', function(ws) {//クライアントが接続してきたときの処理
   console.log("client joined.");
+  clients.push(ws);
   const PlayerID = nextplayerID
   nextplayerID++;    //次にアクセスするプレイヤーのID
   const responsetest = new ArrayBuffer(1);
@@ -129,6 +134,9 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
   ws.send(responsetest);
 
   ws.on('message', function(data) {//クライアントからメッセージを受信したときの処理
+    //console.log("received data" + Array.from(data).join(", "));
+    console.log(data);
+    flag = 1;
     if(flag == 0){//画像の送受信用 マッチング処理もあった...
       //画像の受信
       //画像の受信が完了したらflag = 1にする
@@ -140,6 +148,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
       }
 
       //通信種別による関数の呼び出し
+      console.log("useData[0]: ",useData[0])
       switch(useData[0]){//種別に応じて関数を呼び出す
         case 30://ラウンドが始まったことをクライアントに送信
           serialNumber++;
@@ -173,6 +182,13 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
             EffBeforeBattle(pid);
           }
           break;
+
+        case 24: //カード情報の受信・送信
+        //カード情報をもう片方のクライアントに送信
+        BinaryPassThrough(ws, data);
+        console.log("PassThrough Done");
+        //カード情報の保存
+
       }
     }
     console.log("現在のターン数",roundnum);
@@ -185,6 +201,8 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
   });
   ws.on('close', function() {
     console.log("client left.");
+    // クライアントを配列から削除
+    clients = clients.filter(client => client !== ws);
   });
 });
 
@@ -194,8 +212,8 @@ server.listen(port, function() {
 
 function BinaryTranslation(recv_data){//信号を元に戻す どう考えてもいるわこれ
   const dataset = new Uint8Array(recv_data);
-  console.log("binary received from client -> " + Array.from(recv_data).join(", ") + "");
-  console.log("バイナリデータ",dataset);
+  //console.log("binary received from client -> " + Array.from(recv_data).join(", ") + "");
+  //console.log("バイナリデータ",dataset);
   return dataset;
 
 }
@@ -236,36 +254,12 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
   serialNumber++;
   ws.send(buffer);
 }
-
-
-function CardSelect(data){
-  //カード選択
-  let pid = data[2];//プレイヤーID
-  let cid = data[3];//カードID
-  let selectedCard = cards[pid][cid];
-  return selectedCard;
-}
-
-
-function EffBeforeBattle(pid){
-  //バトル前の特殊効果
-  selectedCard1.eff;
-  selectedCard2.eff;
-  turnManege ++;
-  if(turnManege === 4){
-    BattleFlow();
-  }
-}
-
-function EffAfterBattle(pid){
-  //バトル後の特殊効果
-  selectedCard1.eff;
-  selectedCard2.eff;
-  turnManege ++;
-  if(turnManege === 6){
-    //ターン終了処理
-    //特殊効果がある場合はここで処理
-  }
+function BinaryPassThrough(sender, message) {
+  clients.forEach(client => {
+    if (client !== sender && client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
 }
 
 function  BattleFlow(){
