@@ -116,6 +116,7 @@ let nextplayerID = 0;//最初にアクセスしたプレイヤーのID
 wss.on('connection', function(ws) {//クライアントが接続してきたときの処理
     //クライアントが接続してきたときの処理
     console.log("client joined.");
+    console.log("1");
     clients.push(ws);
     const PlayerID = nextplayerID;
     nextplayerID++; //次にアクセスするプレイヤーのID
@@ -125,6 +126,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
     view.setUint8(1, PlayerID); //クライアントにプレイヤーIDを送信
     //sendBinaryData(ws, [10,PlayerID]);//プレイヤーが参加したことをクライアントに送信....sendだけ,binarrypassslow
     ws.send(responsetest);
+    
     // 接続が2人になった場合、全クライアントに通知
     if (clients.length === 2) {
       console.log("2 players connected. Sending game start signal.");
@@ -231,13 +233,12 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
       view.setUint8(3, send_data[3]); // カード番号
       break;
     case 32:
-      view.setUint8(2, send_data[2]); // ダメージ量
-      view.setUint8(3, send_data[3]); // 攻撃プレイヤーID
-      view.setUint8(4, send_data[4]); // 被攻撃プレイヤーID
-      view.setUint8(5, send_data[5]); // 特殊効果番号
-      // 上位バイトと下位バイトを抽出
-      view.setUint8(5, send_data[6]); // 特殊効果番号の上位バイトを格納
-      view.setUint8(6, send_data[7]); // 特殊効果番号の下位バイトを格納
+      view.setUint8(2, send_data[2]); ///攻撃プレイヤーID
+      view.setUint8(3, send_data[3]); // 被攻撃プレイヤーID
+      view.setUint8(4, send_data[4]); // 特殊効果番号
+      view.setUint8(5, send_data[5]); // 引数1
+      view.setUint8(6, send_data[6]); // 引数2
+      view.setUint8(7, send_data[7]); // 
 
       const recentHP1 = send_data[8]; // プレイヤー1のHP
       const highByteHP = (recentHP1 >> 8) & 0xFF; // 上位バイト
@@ -312,6 +313,8 @@ function BattleCalc(playernum, atknum, defnum, hpnum,ws){//被攻撃側のプレ
 function EffBeforeBattle(pid,ws){//turnManegeが3の時に呼び出す
   //バトル前の特殊効果の処理
   selectedCard[pid][0].effectActive();
+  console.log(Player[0].hp);
+  console.log(Player[1].hp);
   sendBinaryData(ws,[32,serialNumber, Players[pid].id, Players[(pid +1) % 2 ].id, selectedCard[pid].eff,0,0, Players[pid].hp, Players[(pid + 1) % 2].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
   turnManege++;
   if(turnManege === 5){
