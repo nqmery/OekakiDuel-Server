@@ -229,18 +229,17 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
       view.setUint8(2, send_data[2]); // ダメージ量
       view.setUint8(3, send_data[3]); // 攻撃プレイヤーID
       view.setUint8(4, send_data[4]); // 被攻撃プレイヤーID
-      const specialEffect = send_data[5]; // 16ビットの特殊効果番号
+      view.setUint8(5, send_data[5]); // 特殊効果番号
       // 上位バイトと下位バイトを抽出
-      const highByteEff = (specialEffect >> 8) & 0xFF; // 上位バイト
-      const lowByteEff = specialEffect & 0xFF; // 下位バイト
-      view.setUint8(5, highByteEff); // 特殊効果番号の上位バイトを格納
-      view.setUint8(6, lowByteEff); // 特殊効果番号の下位バイトを格納
-      const recentHP1 = send_data[6]; // プレイヤー1のHP
+      view.setUint8(5, send_data[6]); // 特殊効果番号の上位バイトを格納
+      view.setUint8(6, send_data[7]); // 特殊効果番号の下位バイトを格納
+
+      const recentHP1 = send_data[8]; // プレイヤー1のHP
       const highByteHP = (recentHP1 >> 8) & 0xFF; // 上位バイト
       const lowByteHP = recentHP1 & 0xFF; // 下位バイト
       view.setUint8(7, highByteHP); // HPの上位バイトを格納
       view.setUint8(8, lowByteHP); // HPの下位バイトを格納
-      const recentHP2 = send_data[7]; // hpの関係量
+      const recentHP2 = send_data[9]; // hpの関係量
       const highByteHP2 = (recentHP2 >> 8) & 0xFF; // 上位バイト
       const lowByteHP2 = recentHP2 & 0xFF; // 下位バイト
       view.setUint8(9, highByteHP2); // HPの上位バイトを格納
