@@ -49,6 +49,7 @@ class Card{
     switch(this.eff){
       case 1:
         //通常攻撃
+        break;
       case 10:
         //効果10
          //確実に先制攻撃
@@ -72,7 +73,7 @@ class Card{
         break;
       case 13:
         if(turnManege === 7 || turnManege === 8){
-          Players[this.player][0].hp = 200;
+          Players[this.player].hp = 200;
         }
         break;
       case 14:
@@ -80,7 +81,7 @@ class Card{
         //相手の防御力が自分の防御力の3倍以上とかのときに相手の体力を残り5くらいまで減らす
         if(turnManege === 7 || turnManege === 8){
           if(selectedCard[(this.player + 1) % 2][0].def >= this.def * 3){
-            Players[(this.player + 1) % 2][0].hp = 5;
+            Players[(this.player + 1) % 2].hp = 5;
           }
         }
         break;
@@ -99,6 +100,9 @@ class Card{
           selectedCard[this.player][0].atk = 0;
         }
         break;
+        default:
+          //デフォルトの処理  
+          break;
     }
   }
 }
@@ -115,18 +119,19 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
     clients.push(ws);
     const PlayerID = nextplayerID;
     nextplayerID++; //次にアクセスするプレイヤーのID
-    //const responsetest = new ArrayBuffer(2);//接続時のレスポンス
-    // const view = new DataView(responsetest);
-    // view.setUint8(0, 10); //通信種別:通信確立
-    // view.setUint8(1, PlayerID); //クライアントにプレイヤーIDを送信
-    sendBinaryData(ws, [10,PlayerID]);//プレイヤーが参加したことをクライアントに送信
+    const responsetest = new ArrayBuffer(2);//接続時のレスポンス
+    const view = new DataView(responsetest);
+    view.setUint8(0, 10); //通信種別:通信確立
+    view.setUint8(1, PlayerID); //クライアントにプレイヤーIDを送信
+    //sendBinaryData(ws, [10,PlayerID]);//プレイヤーが参加したことをクライアントに送信....sendだけ,binarrypassslow
+    ws.send(responsetest);
     // 接続が2人になった場合、全クライアントに通知
     if (clients.length === 2) {
       console.log("2 players connected. Sending game start signal.");
-      // const startSignal = new ArrayBuffer(1);
-      // new DataView(startSignal).setUint8(0, 0x10); // 0x01 をゲーム開始シグナルとする
-      // clients.forEach((client) => client.send(startSignal));
-      sendBinaryData(ws, [16]);//ゲーム開始のシグナル
+       const startSignal = new ArrayBuffer(1);
+       new DataView(startSignal).setUint8(0, 0x10); // 0x01 をゲーム開始シグナルとする
+       clients.forEach((client) => client.send(startSignal));
+      //sendBinaryData(ws, [16]);//ゲーム開始のシグナル
       flag = 1;
     }
   ws.on('message', function(data) {//クライアントからメッセージを受信したときの処理
@@ -161,9 +166,9 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         //カードのインスタンス化
         cardnum++;
         cards[useData[1]][useData[2]] = new Card(useData[2],useData[1],useData[3],useData[4],useData[5],useData[6],useData[7],useData[8],useData[9]);//種別,プレイヤー番号,カード番号,攻撃力,防御力,速さ,特殊効果
-        if(cardnum === 10){
+        if(cardnum === 2){//テスト用としてカードが二枚くれば実行するようにする
           //カードの選択フェーズに移行
-          sendBinaryData(ws, [30,serialNumber,1]);//ターン開始
+          sendBinaryData(ws, [30,serialNumber,1]);//ターン開始,片方のクライアントにしか来ないんだけど
         }
         break;
         //カード情報の保存
@@ -203,7 +208,7 @@ function BinaryTranslation(recv_data){//信号を元に戻す どう考えても
 }
 
 function sendBinaryData(ws,send_data){//信号をバイナリに変換して送信
-  let buffer = new ArrayBuffer(9);
+  let buffer = new ArrayBuffer(11);
   let view = new DataView(buffer);
   //ここは共通の処理
   if(!(send_data[0] === 10||send_data[0] === 16)){//プレイヤーが参加したとき以外
@@ -249,7 +254,8 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
       break;
   }
   console.log("send_data",buffer); 
-  ws.send(buffer);
+  //ws.send(buffer);
+  clients.forEach((client) => client.send(buffer));
 }
 
 function CardSelect(data){
@@ -272,14 +278,14 @@ function  BattleFlow(ws){//turnManegeが5の時に呼び出す
   //カードの速さを比較
   if(selectedCard[0][0].spd > selectedCard[1][0].spd){
     //先にプレイヤー１が攻撃
-    BattleCalc(selectedCard[1][0].player, selectedCard[0][0].atk, selectedCard[1][0].def, Players[1][0].hp,ws); 
+    BattleCalc(selectedCard[1][0].player, selectedCard[0][0].atk, selectedCard[1][0].def, Players[1].hp,ws); 
     //後からプレイヤー２が攻撃
-    BattleCalc(selectedCard[0][0].player, selectedCard[1][0].atk, selectedCard[0][0].def, Players[0][0].hp);
+    BattleCalc(selectedCard[0][0].player, selectedCard[1][0].atk, selectedCard[0][0].def, Players[0].hp,ws);
   } else {
     //先にプレイヤー２が攻撃
-    BattleCalc(selectedCard[0][0].player, selectedCard[1][0].atk, selectedCard[0][0].def, Players[0][0].hp);
+    BattleCalc(selectedCard[0][0].player, selectedCard[1][0].atk, selectedCard[0][0].def, Players[0].hp,ws);
     //後からプレイヤー１が攻撃
-    BattleCalc(selectedCard[1][0].player, selectedCard[0][0].atk, selectedCard[1][0].def, Players[1][0].hp);
+    BattleCalc(selectedCard[1][0].player, selectedCard[0][0].atk, selectedCard[1][0].def, Players[1].hp,ws);
   } 
 }
 
@@ -290,13 +296,13 @@ function BattleCalc(playernum, atknum, defnum, hpnum,ws){//被攻撃側のプレ
   //HPの更新
   hpnum = Math.max(hpnum - Damagevalue, 0);
   if(playernum === 0){
-    Players[0][0].hp = hpnum; //クライアント１のHP更新
+    Players[0].hp = hpnum; //クライアント１のHP更新
   }
   else if (playernum === 1){
-    Players[1][0].hp = hpnum; //クライアント２のHP更新
+    Players[1].hp = hpnum; //クライアント２のHP更新
   }
   turnManege++;
-  sendBinaryData(ws,[32,serialNumber, Players[playernum][0].id, Players[(playernum +1) % 2 ][0].id, 1,0,0,Players[playernum][0].hp, Players[(playernum + 1) % 2][0].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
+  sendBinaryData(ws,[32,serialNumber, Players[playernum].id, Players[(playernum +1) % 2 ].id, 1,0,0,Players[playernum].hp, Players[(playernum + 1) % 2].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
   if(turnManege === 7){
     EffAfterBattle(playernum, ws);
   }
@@ -305,9 +311,8 @@ function BattleCalc(playernum, atknum, defnum, hpnum,ws){//被攻撃側のプレ
 function EffBeforeBattle(pid,ws){//turnManegeが3の時に呼び出す
   //バトル前の特殊効果の処理
   selectedCard[pid][0].effectActive();
-  sendBinaryData(ws,[32,serialNumber, Players[pid][0].id, Players[(pid +1) % 2 ][0].id, selectedCard[pid][0].eff,0,0, Players[pid][0].hp, Players[(pid + 1) % 2][0].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
+  sendBinaryData(ws,[32,serialNumber, Players[pid].id, Players[(pid +1) % 2 ].id, selectedCard[pid].eff,0,0, Players[pid].hp, Players[(pid + 1) % 2].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
   turnManege++;
-  sendBinaryData(ws, [32,serialNumber,pid,(pid+1)%2,selectedCard[9],Players[(pid+1)%2][0].hp,Players[pid][0].hp])//バトル前効果をクライアントに送信 
   if(turnManege === 5){
     BattleFlow();
   }else{
@@ -318,7 +323,7 @@ function EffBeforeBattle(pid,ws){//turnManegeが3の時に呼び出す
 function EffAfterBattle(pid, ws){//turnManegeが7の時に呼び出す
   //バトル後の特殊効果の処理
   selectedCard[pid][0].effectActive();
-  sendBinaryData(ws,[32,serialNumber, Players[pid][0].id, Players[(pid +1) % 2 ][0].id, selectedCard[pid][0].eff,0, 0, Players[pid][0].hp , Players[(pid + 1) % 2][0].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, 特殊効果引数,HP
+  sendBinaryData(ws,[32,serialNumber, Players[pid].id, Players[(pid +1) % 2 ].id, selectedCard[pid].eff,0, 0, Players[pid].hp , Players[(pid + 1) % 2].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, 特殊効果引数,HP
   turnManege++;
   if(turnManege === 9){
     //ターン終了処理
