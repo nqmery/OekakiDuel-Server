@@ -48,7 +48,17 @@ class Card{
     this.def = def;//防御力
     this.atk = atk;//攻撃力
     this.spd = spd;//速さ
-    this.eff = effID;//効果
+    this.eff = new Effect(effID);//効果
+  }
+  effectActive(){
+    this.eff.effectActive();//特殊効果の使用時はこのメソッドを呼び出す
+  }
+}
+const cards  = Array.from({ length: 2 }, () => Array(5));//こっちの方がかんりしやすい
+const SelectedCard = Array.from({length: 2}, () => Array(1));
+class Effect{
+  constructor(effID){
+    this.effID = effID;//効果のID
   }
   effectActive(){
     //効果の発動
@@ -107,8 +117,6 @@ class Card{
   }
 }
 
-const cards  = Array.from({ length: 2 }, () => Array(5));//こっちの方がかんりしやすい
-const selectedCard = Array.from({ length: 2 }, () => Array(1));
 
 let nextplayerID = 0;//最初にアクセスしたプレイヤーのID
 wss.on('connection', function(ws) {//クライアントが接続してきたときの処理
