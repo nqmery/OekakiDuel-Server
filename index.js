@@ -21,8 +21,8 @@ class Player {
 }
 
 
-const Player1 = new Player(0, 1, 200); //プレイヤー１のインスタンス初期値
-const Player2 = new Player(1, 1, 200); //プレイヤー２のインスタンス初期値
+ Player1 = new Player(0, 1, 200); //プレイヤー１のインスタンス初期値
+ Player2 = new Player(1, 1, 200); //プレイヤー２のインスタンス初期値
 
 class Card{
   constructor(id,player,def,atk,spd,effID){
