@@ -235,11 +235,16 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
       const lowByteEff = specialEffect & 0xFF; // 下位バイト
       view.setUint8(5, highByteEff); // 特殊効果番号の上位バイトを格納
       view.setUint8(6, lowByteEff); // 特殊効果番号の下位バイトを格納
-      const recentHP = send_data[6]; // hpの関係量
-      const highByteHP = (recentHP >> 8) & 0xFF; // 上位バイト
-      const lowByteHP = recentHP & 0xFF; // 下位バイト
+      const recentHP1 = send_data[6]; // プレイヤー1のHP
+      const highByteHP = (recentHP1 >> 8) & 0xFF; // 上位バイト
+      const lowByteHP = recentHP1 & 0xFF; // 下位バイト
       view.setUint8(7, highByteHP); // HPの上位バイトを格納
       view.setUint8(8, lowByteHP); // HPの下位バイトを格納
+      const recentHP2 = send_data[7]; // hpの関係量
+      const highByteHP2 = (recentHP2 >> 8) & 0xFF; // 上位バイト
+      const lowByteHP2 = recentHP2 & 0xFF; // 下位バイト
+      view.setUint8(9, highByteHP2); // HPの上位バイトを格納
+      view.setUint8(10, lowByteHP2); // HPの下位バイトを格納
       break;
   }
   console.log("send_data",buffer); 
@@ -290,7 +295,7 @@ function BattleCalc(playernum, atknum, defnum, hpnum,ws){//被攻撃側のプレ
     Players[1][0].hp = hpnum; //クライアント２のHP更新
   }
   turnManege++;
-  sendBinaryData(ws,[32,serialNumber, Players[playernum][0].id, Players[(playernum +1) % 2 ][0].id, 0,0, Players[(playernum + 1) % 2][0].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
+  sendBinaryData(ws,[32,serialNumber, Players[playernum][0].id, Players[(playernum +1) % 2 ][0].id, 1,0,0,Players[playernum][0].hp, Players[(playernum + 1) % 2][0].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
   if(turnManege === 7){
     EffAfterBattle(playernum, ws);
   }
@@ -299,7 +304,7 @@ function BattleCalc(playernum, atknum, defnum, hpnum,ws){//被攻撃側のプレ
 function EffBeforeBattle(pid,ws){//turnManegeが3の時に呼び出す
   //バトル前の特殊効果の処理
   selectedCard[pid][0].effectActive();
-  sendBinaryData(ws,[32,serialNumber, Players[pid][0].id, Players[(pid +1) % 2 ][0].id, selectedCard[pid][0].eff,0, Players[(pid + 1) % 2][0].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
+  sendBinaryData(ws,[32,serialNumber, Players[pid][0].id, Players[(pid +1) % 2 ][0].id, selectedCard[pid][0].eff,0,0, Players[pid][0].hp, Players[(pid + 1) % 2][0].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
   turnManege++;
   if(turnManege === 5){
     BattleFlow();
@@ -311,7 +316,7 @@ function EffBeforeBattle(pid,ws){//turnManegeが3の時に呼び出す
 function EffAfterBattle(pid, ws){//turnManegeが7の時に呼び出す
   //バトル後の特殊効果の処理
   selectedCard[pid][0].effectActive();
-  sendBinaryData(ws,[32,serialNumber, Players[pid][0].id, Players[(pid +1) % 2 ][0].id, selectedCard[pid][0].eff,0, Players[(pid + 1) % 2][0].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, 特殊効果引数,HP
+  sendBinaryData(ws,[32,serialNumber, Players[pid][0].id, Players[(pid +1) % 2 ][0].id, selectedCard[pid][0].eff,0, 0, Players[pid][0].hp , Players[(pid + 1) % 2][0].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, 特殊効果引数,HP
   turnManege++;
   if(turnManege === 9){
     //ターン終了処理
@@ -324,10 +329,6 @@ function EffAfterBattle(pid, ws){//turnManegeが7の時に呼び出す
 function EndTurn(ws){//turnManegeが9の時に呼び出す
   //ターン終了処理
   //特殊効果がある場合は清算
-  send_data = [32,serialNumber, Players[0][0].id, Players[1][0].id, selectedCard[0][0].eff, 0,Players[1][0].hp];//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
-  sendBinaryData(ws, send_data); //クライアント１が与えたダメージを送る
-  send_data = [32,serialNumber, Players[1][0].id, Players[0][0].id, selectedCard[1][0].eff, 0,Players[0][0].hp];
-  sendBinaryData(ws, send_data); //クライアント２が与えたダメージを送る
   turnManege = 0;
   roundnum++;
   sendBinaryData(ws, [30, serialNumber, roundnum]);//
