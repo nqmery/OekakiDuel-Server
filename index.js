@@ -44,10 +44,7 @@ class Card{
     this.atk = atk;//攻撃力
     this.def = def;//防御力
     this.spd = spd;//速さ
-    this.eff = new Effect(effID);//効果
-  }
-  effectActive(){
-    this.eff.effectActive();//特殊効果の使用時はこのメソッドを呼び出す
+    this.eff = effID;//効果
   }
   effectActive(){
     //効果の発動
@@ -280,11 +277,6 @@ function  BattleFlow(){//turnManegeが5の時に呼び出す
     //後からプレイヤー１が攻撃
     BattleCalc(selectedCard[1][0].player, selectedCard[0][0].atk, selectedCard[1][0].def, Players[1][0].hp);
   } 
-  serialNumber++;
-  send_data = [32,serialNumber, Player[0][0].id, Player[0][1],selectedCard1.effID,Player[0][1].hp];
-  sendBinaryData(ws, send_data); //クライアント１が与えたダメージを送る
-  send_data = [32,serialNumber, Player[0][1].id, Player[0][0],selectedCard2.effID,Player[0][0].hp];
-  sendBinaryData(ws, send_data); //クライアント２が与えたダメージを送る
 }
 
 // バトル中のダメージ計算
