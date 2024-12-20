@@ -171,7 +171,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
         //カードのインスタンス化
         cardnum++;
         cards[useData[1]][useData[2]] = new Card(useData[2],useData[1],useData[3],useData[4],useData[5],useData[6]);//種別,プレイヤー番号,カード番号,攻撃力,防御力,速さ,特殊効果
-        if(cardnum === 2){//テスト用としてカードが二枚くれば実行するようにする...ここがおかしい
+        if(cardnum === 10){//テスト用としてカードが二枚くれば実行するようにする...ここがおかしい
           //カードの選択フェーズに移行
           sendBinaryData(ws, [30,serialNumber,1]);//ターン開始,片方のクライアントにしか来ないんだけど
        // cards[0][0] = new Card(0,1,0,0,0,0,0,1);
