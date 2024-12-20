@@ -253,18 +253,19 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
       view.setUint8(4, send_data[4]); // 特殊効果番号
       view.setUint8(5, send_data[5]); // 引数1
       view.setUint8(6, send_data[6]); // 引数2
-      view.setUint8(7, send_data[7]); // 
 
-      const recentHP1 = send_data[8]; // プレイヤー1のHP
+      const recentHP1 = send_data[7]; // プレイヤー1のHP
       const highByteHP = (recentHP1 >> 8) & 0xFF; // 上位バイト
       const lowByteHP = recentHP1 & 0xFF; // 下位バイト
       view.setUint8(7, highByteHP); // HPの上位バイトを格納
       view.setUint8(8, lowByteHP); // HPの下位バイトを格納
-      const recentHP2 = send_data[9]; // hpの関係量
+      console.log("HP1",recentHP1);
+      const recentHP2 = send_data[8]; // hpの関係量
       const highByteHP2 = (recentHP2 >> 8) & 0xFF; // 上位バイト
       const lowByteHP2 = recentHP2 & 0xFF; // 下位バイト
       view.setUint8(9, highByteHP2); // HPの上位バイトを格納
       view.setUint8(10, lowByteHP2); // HPの下位バイトを格納
+      console.log("HP2",recentHP2);
       break;
       case 90:
       view.setUint8(2, send_data[2]); // 勝者
