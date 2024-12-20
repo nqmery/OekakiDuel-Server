@@ -36,13 +36,13 @@ class Player {
 }
 let Players = [new Player(0), new Player(1)]; //プレイヤーのインスタンス初期値
 class Card{
-  constructor(id,player,atk,def,spd,effID){
+  constructor(id,player,atk,def,spd,eff){
     this.player = player;//どっちのプレイヤーのカードか このパラメータ使わないかも　cards配列で管理するから
     this.id = id;//カード番号
     this.atk = atk;//攻撃力
     this.def = def;//防御力
     this.spd = spd;//速さ
-    this.eff = effID;//効果
+    this.eff = eff;//効果
   }
   effectActive(){
     //効果の発動
@@ -73,7 +73,7 @@ class Card{
         break;
       case 13:
         if(turnManege === 7 || turnManege === 8){
-          Players[this.player].hp = 200;
+          Players[this.player].hp = 10000;
         }
         break;
       case 14:
@@ -158,7 +158,7 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
           turnManege++;//ターンのどこなのかを管理
           sendBinaryData(ws,send_data);
           if(turnManege === 2){
-            EffBeforeBattle(pid,ws);
+            EffBeforeBattle(pid,ws);//pidが懇親されてしまっている
           }
           break;
         case 24: //カード情報の受信・送信
@@ -262,8 +262,8 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
 
 function CardSelect(data){
   //カード選択
-  let pid = data[2];//プレイヤーID
-  let cid = data[3];//カードID
+  let pid = data[1];//プレイヤーID
+  let cid = data[2];//カードID
   let selectedCard = cards[pid][cid];
   return selectedCard;
 }
@@ -297,6 +297,10 @@ function BattleCalc(playernum, atknum, defnum, hpnum,ws){//被攻撃側のプレ
   let Damagevalue = Math.max(defnum - atknum, 0); 
   //HPの更新
   hpnum = Math.max(hpnum - Damagevalue, 0);
+  console.log(playernum);
+  console.log(atknum);
+  console.log(defnum);
+  console.log(playernum);
   if(playernum === 0){
     Players[0].hp = hpnum; //クライアント１のHP更新
   }
@@ -313,8 +317,8 @@ function BattleCalc(playernum, atknum, defnum, hpnum,ws){//被攻撃側のプレ
 function EffBeforeBattle(pid,ws){//turnManegeが3の時に呼び出す
   //バトル前の特殊効果の処理
   selectedCard[pid][0].effectActive();
-  console.log(Player[0].hp);
-  console.log(Player[1].hp);
+  console.log(Players[0].hp+ "バトル前");
+  console.log(Players[1].hp);
   sendBinaryData(ws,[32,serialNumber, Players[pid].id, Players[(pid +1) % 2 ].id, selectedCard[pid].eff,0,0, Players[pid].hp, Players[(pid + 1) % 2].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
   turnManege++;
   if(turnManege === 5){
@@ -329,6 +333,7 @@ function EffAfterBattle(pid, ws){//turnManegeが7の時に呼び出す
   selectedCard[pid][0].effectActive();
   sendBinaryData(ws,[32,serialNumber, Players[pid].id, Players[(pid +1) % 2 ].id, selectedCard[pid].eff,0, 0, Players[pid].hp , Players[(pid + 1) % 2].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, 特殊効果引数,HP
   turnManege++;
+  console.log(Players[0].hp+ "バトル後");
   if(turnManege === 9){
     //ターン終了処理
     EndTurn(ws);
