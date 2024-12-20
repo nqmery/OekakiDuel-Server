@@ -156,21 +156,25 @@ wss.on('connection', function(ws) {//クライアントが接続してきたと�
           selectedCard[pid][0] = CardSelect(useData);//クライアントに選ばれたカードの取得,0はいじらない
           let send_data = [31, serialNumber, pid, cid];//データの送信
           turnManege++;//ターンのどこなのかを管理
+          console.log("turnManege1" + turnManege);
           sendBinaryData(ws,send_data);
           if(turnManege === 2){
-            EffBeforeBattle(pid,ws);//pidが懇親されてしまっている
+            EffBeforeBattle(pid,ws);//pidが更新されてしまっている
+            console.log("turnManege2" + turnManege);
           }
           break;
+       
         case 24: //カード情報の受信・送信
-        //カード情報をもう片方のクライアントに送信
+        //カード情報をもう片方のクライアントに送信...わたってる？
         BinaryPassThrough(ws, data);
         console.log("PassThrough Done");
         //カードのインスタンス化
         cardnum++;
-        cards[useData[1]][useData[2]] = new Card(useData[2],useData[1],useData[3],useData[4],useData[5],useData[6],useData[7],useData[8],useData[9]);//種別,プレイヤー番号,カード番号,攻撃力,防御力,速さ,特殊効果
-        if(cardnum === 2){//テスト用としてカードが二枚くれば実行するようにする
+        cards[useData[1]][useData[2]] = new Card(useData[2],useData[1],useData[3],useData[4],useData[5],useData[6]);//種別,プレイヤー番号,カード番号,攻撃力,防御力,速さ,特殊効果
+        if(cardnum === 2){//テスト用としてカードが二枚くれば実行するようにする...ここがおかしい
           //カードの選択フェーズに移行
           sendBinaryData(ws, [30,serialNumber,1]);//ターン開始,片方のクライアントにしか来ないんだけど
+       // cards[0][0] = new Card(0,1,0,0,0,0,0,1);
         }
         break;
         //カード情報の保存
@@ -192,12 +196,23 @@ server.listen(port, function() {
   console.log(`Listening on http://localhost:${port}`);
 });
 
-function BinaryTranslation(recv_data){//信号を元に戻す どう考えてもいるわこれ
+function BinaryTranslation(recv_data){//信号を元に戻す どう考えてもいるわこれ.クライアント→サーバー
   if(recv_data[0] ===24){
-    let dataset = new Uint8Array(recv_data);
-    let dataView = new DataView(dataset.buffer);
-    dataset[3] = dataView.getUint16(3,false);//
-    dataset[4] = dataView.getUint16(5,false);//
+    let datasettmp = new Uint8Array(recv_data);
+    let dataset = [7];
+    let dataView = new DataView(datasettmp.buffer);
+    dataset[0] = dataView.getUint8(0,false);//通信種別
+    dataset[1] = dataView.getUint8(1,false);//プレイヤー番号
+    dataset[2] = dataView.getUint8(2,false);//カード番号
+    dataset[3] = dataView.getUint16(3,false);//atk
+    dataset[4] = dataView.getUint16(5,false);//dff
+    dataset[5] = dataView.getUint8(7,false);//spd
+    dataset[6] = dataView.getUint8(8,false);//eff
+    for (i= 0; i < dataset.length; i++){
+      console.log("dataset",dataset[i]);
+    }
+    console.log(dataset[5]);
+    console.log(dataset[6]);
     return dataset;
   }else{
     let dataset = new Uint8Array(recv_data);
@@ -262,9 +277,10 @@ function sendBinaryData(ws,send_data){//信号をバイナリに変換して送�
 
 function CardSelect(data){
   //カード選択
-  let pid = data[1];//プレイヤーID
-  let cid = data[2];//カードID
+  let pid = data[2];//プレイヤーID
+  let cid = data[3];//カードID
   let selectedCard = cards[pid][cid];
+  console
   return selectedCard;
 }
 
@@ -294,13 +310,16 @@ function  BattleFlow(ws){//turnManegeが5の時に呼び出す
 // バトル中のダメージ計算
 function BattleCalc(playernum, atknum, defnum, hpnum,ws){//被攻撃側のプレイヤー番号、攻撃力、防御力、HP
   //負の値にならないようにして計算結果を定義
-  let Damagevalue = Math.max(defnum - atknum, 0); 
+  let Damagevalue = Math.max(atknum - defnum, 0); 
+  console.log("atknum",atknum);
+  console.log("defnum",defnum);
+  console.log("hpnum",hpnum);
   //HPの更新
   hpnum = Math.max(hpnum - Damagevalue, 0);
-  console.log(playernum);
-  console.log(atknum);
-  console.log(defnum);
-  console.log(playernum);
+  console.log("playernum",playernum);
+  console.log("attack1",atknum);
+  console.log("def1",defnum);
+  console.log("hp1",hpnum);
   if(playernum === 0){
     Players[0].hp = hpnum; //クライアント１のHP更新
   }
@@ -321,6 +340,7 @@ function EffBeforeBattle(pid,ws){//turnManegeが3の時に呼び出す
   console.log(Players[1].hp);
   sendBinaryData(ws,[32,serialNumber, Players[pid].id, Players[(pid +1) % 2 ].id, selectedCard[pid].eff,0,0, Players[pid].hp, Players[(pid + 1) % 2].hp]);//32, シリアルナンバー, 攻撃プレイヤーID, 被攻撃プレイヤーID, 特殊効果, HP
   turnManege++;
+  console.log("turnManege" + turnManege);
   if(turnManege === 5){
     BattleFlow();
   }else{
